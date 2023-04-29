@@ -230,7 +230,9 @@ def create_app(test_config=None):
             elif req["exptype"] == "Series":
                 andor.setAcquisitionMode(3)
                 andor.setNumberKinetics(int(req["expnum"]))
+                andor.setNumberAccumulations(int(req["accumnum"]))
                 andor.setExposureTime(float(req["exptime"]))
+                andor.setKineticCycleTime(float(req["kinetictime"]))
                 andor.setAccumulationCycleTime(float(req["cycletime"]))
 
             file_name = f"{req['filename']}.fits"
@@ -259,8 +261,26 @@ def create_app(test_config=None):
                     str(req["exptype"]),
                     "Exposure Type (Single, Real Time, or Series)"
                 )
+                # TODO: for a series exposure, make a fits file with different entries      
+                accum_num = "N/A"
+                cycle_time = "N/A"
+                accum_time = "N/A"
+                
+                if str(req["exptype"]) == "Series":
+                    accum_num = str(req["accumnum"])
+                    cycle_time = str(req["kinetictime"])
+                    accum_time = str(req["accumtime"])
+                    
+                hdu.header["ACCUM_NUM"] = (
+                    accum_num,
+                    "The number of accumulations per set"
+                )
                 hdu.header["CYCLE_TIME"] = (
-                    str(req["cycletime"]),
+                    cycle_time,
+                    "The time between the start of sets of scans"
+                )
+                hdu.header["ACCUM_TIME"] = (
+                    accum_time,
                     "The time between the start of individual scans"
                 )
 

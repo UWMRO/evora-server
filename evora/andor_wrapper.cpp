@@ -38,8 +38,8 @@ PYBIND11_MODULE(andor_wrapper, m) {
     m.def("setAcquisitionMode",	        &SetAcquisitionMode,	    "Set acquisition mode");
     m.def("setExposureTime",	        &SetExposureTime,	        "Set exposure time of shot");
     m.def("setAccumulationCycleTime",   &SetAccumulationCycleTime,  "Set the time between the start of individual scans");
-    m.def("setNumberAccumulations",     &setNumberAccumulations,    "Set the number of scans to create each member of a kinetic series");
-    m.def("setNumberKinetics",          &SetNumberKinetics,         "Set the number of scans in a series");
+    m.def("setNumberAccumulations",     &setNumberAccumulations,    "Set the number of accumulations in a set");
+    m.def("setNumberKinetics",          &SetNumberKinetics,         "Set the number of SETS of accumulated scans");
     m.def("setKineticCycleTime",        &SetKineticCycleTime,       "Set the time between the start of SETS of accumulated scans");
     m.def("getAcquisitionTimings",  
                                         [](void) {
