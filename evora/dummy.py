@@ -105,7 +105,7 @@ class Dummy:
     def getTemperatureRange(cls):
         if cls.initialized:
             if not cls.acquiring:
-                return {"min": min_temp, "max": max_temp, "status": DRV_SUCCESSsetExpo}
+                return {"min": min_temp, "max": max_temp, "status": DRV_SUCCESS}
             else:
                 return {"min": -999.0, "max": -999.0, "status": DRV_ACQUIRING}
         else:
@@ -130,7 +130,7 @@ class Dummy:
         else:
             return DRV_NOT_INITIALIZED
 
-    def abortAcquisition():
+    def abortAcquisition(cls):
         if cls.initialized:
             cls.acquiring = False
             cls.__thread_stop = True
@@ -332,7 +332,7 @@ class Dummy:
             return DRV_NOT_INITIALIZED
 
     @classmethod
-    def setKineticCycleTime(cycle_time):
+    def setKineticCycleTime(cls, cycle_time):
         if cls.initialized:
             if not cls.acquiring:
                 return DRV_SUCCESS
