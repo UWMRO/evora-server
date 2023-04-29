@@ -1,1 +1,1 @@
-DEBUGGING = True
+DEBUGGING = False
