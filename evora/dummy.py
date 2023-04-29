@@ -1,9 +1,9 @@
 from PIL import Image
 from numpy import asarray
 from numpy import array
+from numpy.random import randint
 import base64
 from io import BytesIO
-from random import randint
 import threading
 import time
 
@@ -175,23 +175,24 @@ class Dummy:
     def getAcquiredData(cls, dim):
         if cls.initialized:
             if not cls.acquiring:
-                img = 'space.txt'
-                if randint(0, 1000) >= 999:
-                    img = 'server/evora/space0.txt'
+                data = randint(65535, size=dim)
+                # img = 'space.txt'
+                # if randint(0, 1000) >= 999:
+                #     img = 'server/evora/space0.txt'
 
-                #time_sec = int(exp_time)
-                #while time_sec:
-                #    mins, secs = divmod(time_sec, 60)
-                #    timer = '{:02d}:{:02d}'.format(mins, secs)
-                #    print(timer, end="\r")
-                #    time.sleep(1)
-                #    time_sec -= 1
+                # #time_sec = int(exp_time)
+                # #while time_sec:
+                # #    mins, secs = divmod(time_sec, 60)
+                # #    timer = '{:02d}:{:02d}'.format(mins, secs)
+                # #    print(timer, end="\r")
+                # #    time.sleep(1)
+                # #    time_sec -= 1
                 
-                #import os
-                #list = os.listdir('.')
+                # #import os
+                # #list = os.listdir('.')
 
-                with open(img) as f:
-                    data = asarray(Image.open(BytesIO(base64.b64decode(f.read()))))
+                # with open(img) as f:
+                #     data = asarray(Image.open(BytesIO(base64.b64decode(f.read()))))
 
                 # This might not work, passing by reference is weird in Python
                 
