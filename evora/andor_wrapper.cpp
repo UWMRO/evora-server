@@ -33,10 +33,11 @@ PYBIND11_MODULE(andor_wrapper, m) {
         py::arg("andor_dir") = "/usr/local/etc/andor"
     );
 
-    m.def("setReadMode",	        &SetReadMode,           "Set Read Mode");
-    m.def("shutdown",		        &ShutDown,              "Shutdown the Andor Camera");
-    m.def("setAcquisitionMode",	    &SetAcquisitionMode,	"Set acquisition mode");
-    m.def("setExposureTime",	    &SetExposureTime,	    "Set exposure time of shot");
+    m.def("setReadMode",	            &SetReadMode,               "Set Read Mode");
+    m.def("shutdown",		            &ShutDown,                  "Shutdown the Andor Camera");
+    m.def("setAcquisitionMode",	        &SetAcquisitionMode,	    "Set acquisition mode");
+    m.def("setExposureTime",	        &SetExposureTime,	        "Set exposure time of shot");
+    m.def("setAccumulationCycleTime",   &setAccumulationCycleTime,  "Set the time between the start of individual scans");
     m.def("getAcquisitionTimings",  
                                     [](void) {
                                         float exposure, accumulate, kinetic;

@@ -231,6 +231,7 @@ def create_app(test_config=None):
                 andor.setAcquisitionMode(3)
                 andor.setNumberKinetics(int(req["expnum"]))
                 andor.setExposureTime(float(req["exptime"]))
+                andor.setAccumulationCycleTime(float(req["cycletime"]))
 
             file_name = f"{req['filename']}.fits"
 
@@ -252,15 +253,20 @@ def create_app(test_config=None):
                 hdu = fits.PrimaryHDU(img["data"])
                 hdu.header["EXP_TIME"] = (
                     float(req["exptime"]),
-                    "Exposure Time (Seconds)",
+                    "Exposure Time (Seconds)"
                 )
                 hdu.header["EXP_TYPE"] = (
                     str(req["exptype"]),
-                    "Exposure Type (Single, Real Time, or Series)",
+                    "Exposure Type (Single, Real Time, or Series)"
                 )
+                hdu.header["CYCLE_TIME"] = (
+                    str(req["cycletime"]),
+                    "The time between the start of individual scans"
+                )
+
                 hdu.header["IMG_TYPE"] = (
                     str(req["imgtype"]),
-                    "Image Type (Bias, Flat, Dark, or Object)",
+                    "Image Type (Bias, Flat, Dark, or Object)"
                 )
                 hdu.header["FILTER"] = (
                     str(req["filtype"]),
