@@ -1,21 +1,21 @@
-# from evora.dummy import Dummy as andor #andor
+from andor_routines import startup, activateCooling, deactivateCooling, acquisition
+from flask import Flask, render_template, request, redirect, jsonify, make_response, send_from_directory, current_app, url_for
 import asyncio
+from astropy.io import fits
+import logging
+import socket
+import os
+import numpy as np
+from datetime import datetime
 import atexit
 import json
-import logging
-import os
-import socket
 import time
-from datetime import datetime
 
-import numpy as np
-from astropy.io import fits
-from flask import (Flask, current_app, jsonify, make_response, redirect,
-                   render_template, request, send_from_directory, url_for)
-
-from andor_routines import (acquisition, activateCooling, deactivateCooling,
-                            startup)
-from evora.dummy import Dummy as andor
+from debug import DEBUGGING
+if (DEBUGGING):
+    from evora.dummy import Dummy as andor #andor
+else:
+    from evora import andor
 
 """
  dev note: I also ran pip install aioflask and pip install asgiref to try to give flask async abilities.
