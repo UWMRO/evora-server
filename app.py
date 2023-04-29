@@ -83,11 +83,8 @@ def create_app(test_config=None):
         tempData = andor.getStatusTEC()["temperature"]
         return render_template("index.html", tempData=tempData)
 
-    # REMEMBER: localhost:5000/temperature
     @app.route("/getTemperature")
     def route_getTemperature():
-        # return str(andor.getStatusTEC()['temperature'])
-        print(andor.getStatusTEC())
         return jsonify(andor.getStatusTEC())
 
     @app.route("/setTemperature", methods=["POST"])
@@ -105,35 +102,6 @@ def create_app(test_config=None):
                 )
 
         return str(req["temperature"])
-
-    # def route_setTemperature():
-    #     """
-    #     Sets the temperature of the camera in Celsius. Uses the 'POST' method
-    #     to take in form requests from the front end.
-
-    #     Returns the set temperature for display on the front end.
-    #     """
-    #     if request.method == "POST":
-    #         app.logger.info('setting temperature')
-    #         req = request.get_json(force=True)
-
-    #         #change_temp = andor.setTemperature(req['temp'])
-    #         activateCooling(req['temp'])
-
-    #         curr_temp = andor.getStatusTEC()['temperature']
-    #         while curr_temp != req['temp']:
-    #             curr_temp = andor.getStatusTEC()['temperature']
-    #         deactivateCooling()
-
-    #         app.logger.info(andor.getStatusTEC()['temperature'])
-
-    #         res = req['temp']
-
-    #         return res
-
-    # @app.route('/getStatusTEC')
-    # def route_getStatusTEC():
-    #     return str(andor.getStatusTEC()['status'])
 
     @app.route("/get_filter_position")
     def route_get_filter():
@@ -219,14 +187,17 @@ def create_app(test_config=None):
         Throws an error if status code is not 20002 (success).
         """
         if request.method == "POST":
-            req = request.get_json(force=True)
-            req = json.loads(req)
+            req = json.loads(request.get_json(force=True))
             dim = andor.getDetector()["dimensions"]
 
             # check if acquisition is already in progress
             status = andor.getStatus()
             if status == 20072:
-                return {"message": str("Acquisition already in progress.")}
+                return {
+                    "filename": fname,
+                    "url": "",
+                    "status": str(status)
+                }
 
             # handle filter type - untested, uncomment if using filter wheel
 
@@ -263,20 +234,19 @@ def create_app(test_config=None):
 
             file_name = f"{req['filename']}.fits"
 
-            andor.startAcquisition()
-            status = andor.getStatus()
-            # todo: review parallelism, threading behavior is what we want?
-            while status == 20072:
-                status = andor.getStatus()
-                app.logger.info("Acquisition in progress")
+            try:
+                andor.startAcquisition()
+            except AndorCameraError as ae:
+                return {
+                    "filename": fname,
+                    "url": "",
+                    "status": str(ae.error_code)
+                }
 
             time.sleep(float(req["exptime"]) + 0.5)
-            img = andor.getAcquiredData(
-                dim
-            )  # TODO: throws an error here! gotta wait for acquisition
+            img = andor.getAcquiredData(dim)
 
             if img["status"] == 20002:
-                # use astropy here to write a fits file
                 andor.setShutter(1, 0, 50, 50)  # closes shutter
                 # home_filter() # uncomment if using filter wheel
                 hdu = fits.PrimaryHDU(img["data"])
@@ -292,7 +262,10 @@ def create_app(test_config=None):
                     str(req["imgtype"]),
                     "Image Type (Bias, Flat, Dark, or Object)",
                 )
-                hdu.header["FILTER"] = (str(req["filtype"]), "Filter (Ha, B, V, g, r)")
+                hdu.header["FILTER"] = (
+                    str(req["filtype"]),
+                    "Filter (Ha, B, V, g, r)"
+                )
 
                 fname = req["filename"]
                 fname = formatFileName(fname)
@@ -301,13 +274,24 @@ def create_app(test_config=None):
                 return {
                     "filename": fname,
                     "url": url_for("static", filename=f"fits_files/{fname}"),
-                    "message": "Capture Successful",
+                    "status": img["status"]
                 }
 
             else:
                 andor.setShutter(1, 0, 50, 50)
-                home_filter()  # uncomment if using filter wheel
-                return {"message": str("Capture Unsuccessful")}
+                # home_filter()  # uncomment if using filter wheel
+                return {
+                    "filename": fname,
+                    "url": "",
+                    "status": img["status"]
+                }
+
+        else:
+            return {
+                    "filename": "",
+                    "url": "",
+                    "status": "-1"
+                }
 
     # we shouldn't download files locally - instead, lets upload them to server instead
     # def send_file(file_name):
@@ -339,11 +323,9 @@ def create_app(test_config=None):
 def OnExitApp():
     andor.shutdown()
 
-
 atexit.register(OnExitApp)
 
 app = create_app()
-
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=3000)
