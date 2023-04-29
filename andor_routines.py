@@ -1,4 +1,4 @@
-from app import DEBUGGING
+from debug import DEBUGGING
 if (DEBUGGING):
     from evora.dummy import Dummy as andor
 else:
@@ -9,29 +9,28 @@ import time
 # flats: take an image with even lighting (i.e. the white paint of the dome)
 # darks: image while shutter closed
 
-def startup():
 
+def startup():
     # implement with config values
     andor.initialize()
     andor.setAcquisitionMode(1)
     andor.setExposureTime(0.1)
 
-    image_dimensions = andor.getDetector()['dimensions']
+    image_dimensions = andor.getDetector()["dimensions"]
 
     andor.setShutter(1, 0, 50, 50)
     andor.setImage(1, 1, 1, image_dimensions[0], 1, image_dimensions[1])
 
-    return {
-        'dimensions' : image_dimensions,
-        'status' : 20002
-    }
+    return {"dimensions": image_dimensions, "status": 20002}
 
-def activateCooling(target_temperature = -10):
+
+def activateCooling(target_temperature=-10):
     # andor.setFanMode(2)
     andor.coolerOn()
     andor.setTargetTEC(target_temperature)
 
     return 20002
+
 
 def deactivateCooling(fan_mode_high=False):
     andor.coolerOff()
@@ -39,7 +38,8 @@ def deactivateCooling(fan_mode_high=False):
 
     return 20002
 
-def acquisition(dim, exposure_time = 0.1):
+
+def acquisition(dim, exposure_time=0.1):
     andor.setExposureTime(exposure_time)
     andor.startAcquisition()
 
@@ -47,10 +47,8 @@ def acquisition(dim, exposure_time = 0.1):
     # while (camera_status == 20072):
     #     camera_status = andor.getStatus()
 
-    return {
-        'data' : andor.getAcquiredData(dim)['data'],
-        'status' : 20002
-    }
+    return {"data": andor.getAcquiredData(dim)["data"], "status": 20002}
+
 
 def acquireBias(dim):
     andor.setShutter(1, 2, 50, 50)
