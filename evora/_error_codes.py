@@ -86,8 +86,9 @@ ERROR_CODES = {
     # not in newest SDK User Guide (11.02.2016):
     20990: ["DRV_NOCAMERA", "None"],
     20991: ["DRV_NOT_SUPPORTED", "None"],
-    20992: ["DRV_NOT_AVAILABLE", "None"]
+    20992: ["DRV_NOT_AVAILABLE", "None"],
 }
+
 
 class AndorCameraError(Exception):
     def __init__(self, error_code):
@@ -96,5 +97,4 @@ class AndorCameraError(Exception):
 
     def __str__(self):
         error_info = ERROR_CODES[self.error_code]
-        return f'({self.error_code}) {error_info[0]}. {error_info[1]}'
-
+        return f"({self.error_code}) {error_info[0]}. {error_info[1]}"

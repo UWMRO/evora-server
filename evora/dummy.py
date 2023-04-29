@@ -1,11 +1,11 @@
-from PIL import Image
-from numpy import asarray
-from numpy import array
-from numpy.random import randint
 import base64
-from io import BytesIO
 import threading
 import time
+from io import BytesIO
+
+from numpy import array, asarray
+from numpy.random import randint
+from PIL import Image
 
 # Replacement constants, taken from atmcdLXd.h
 DRV_SUCCESS = 20002
@@ -18,6 +18,7 @@ DRV_IDLE = 20073
 min_temp = -80.0
 max_temp = 50.0
 
+
 class Dummy:
     current_temp = 20.0
     initialized = False
@@ -25,7 +26,7 @@ class Dummy:
     acquisition_mode = 1
     exp_time = 0.1
     dimensions = (1024, 1024)
-    __thread_stop  = False
+    __thread_stop = False
 
     """
     SWIG notes
@@ -49,45 +50,26 @@ class Dummy:
     def getStatus(cls):
         if cls.initialized:
             if not cls.acquiring:
-                return {
-                    'status' : DRV_IDLE,
-                    'funcstatus' : DRV_SUCCESS
-                }
+                return {"status": DRV_IDLE, "funcstatus": DRV_SUCCESS}
             else:
-                return {
-                    'status' : DRV_ACQUIRING,
-                    'funcstatus' : DRV_SUCCESS
-                }
+                return {"status": DRV_ACQUIRING, "funcstatus": DRV_SUCCESS}
         else:
-            return {
-                'status' : DRV_NOT_INITIALIZED,
-                'funcstatus' : DRV_NOT_INITIALIZED
-            }
-        #return DRV_NOT_INITIALIZED
+            return {"status": DRV_NOT_INITIALIZED, "funcstatus": DRV_NOT_INITIALIZED}
+        # return DRV_NOT_INITIALIZED
 
     @classmethod
     def getStatusTEC(cls):
         if cls.initialized:
             if not cls.acquiring:
-                return {
-                    'status' : DRV_SUCCESS, 
-                    'temperature': cls.current_temp
-                }
+                return {"status": DRV_SUCCESS, "temperature": cls.current_temp}
             else:
-                return {
-                    'status' : DRV_ACQUIRING, 
-                    'temperature': -999.0
-                }
+                return {"status": DRV_ACQUIRING, "temperature": -999.0}
         else:
-            return {
-                'status' : DRV_NOT_INITIALIZED, 
-                'temperature': -999.0
-            }
-        
+            return {"status": DRV_NOT_INITIALIZED, "temperature": -999.0}
 
     @classmethod
     def setTemperature(cls, value):
-        cls.current_temp = float(value) 
+        cls.current_temp = float(value)
         return cls.current_temp
 
     @classmethod
@@ -105,15 +87,13 @@ class Dummy:
     # def getAvailableCameras():
     #     return 1
 
-
     # def getCameraHandle(cameraIndex):
     #     return DRV_SUCCESS
 
     @classmethod
-    def initialize(cls, directory=''):
+    def initialize(cls, directory=""):
         cls.initialized = True
         return DRV_SUCCESS
-
 
     # def getTemperatureF():
     #     return -999
@@ -125,24 +105,11 @@ class Dummy:
     def getTemperatureRange(cls):
         if cls.initialized:
             if not cls.acquiring:
-                return {
-                    'min' : min_temp,
-                    'max' : max_temp,
-                    'status' : DRV_SUCCESSsetExpo
-                }
+                return {"min": min_temp, "max": max_temp, "status": DRV_SUCCESSsetExpo}
             else:
-                return {
-                'min' : -999.0,
-                'max' : -999.0,
-                'status' : DRV_ACQUIRING
-            }
+                return {"min": -999.0, "max": -999.0, "status": DRV_ACQUIRING}
         else:
-            return {
-                'min' : -999.0,
-                'max' : -999.0,
-                'status' : DRV_NOT_INITIALIZED
-            }
-
+            return {"min": -999.0, "max": -999.0, "status": DRV_NOT_INITIALIZED}
 
     # Acquisition
     @classmethod
@@ -187,7 +154,7 @@ class Dummy:
                 # #    print(timer, end="\r")
                 # #    time.sleep(1)
                 # #    time_sec -= 1
-                
+
                 # #import os
                 # #list = os.listdir('.')
 
@@ -195,22 +162,12 @@ class Dummy:
                 #     data = asarray(Image.open(BytesIO(base64.b64decode(f.read()))))
 
                 # This might not work, passing by reference is weird in Python
-                
-                return {
-                    'data' : data,
-                    'status' : DRV_SUCCESS
-                }
-            else:
-                return {
-                    'data' : array([], dtype='uint8'),
-                    'status' : DRV_ACQUIRING
-                }
-        else:
-            return {
-                    'data' : array([], dtype='uint8'),
-                    'status' : DRV_NOT_INITIALIZED
-                }
 
+                return {"data": data, "status": DRV_SUCCESS}
+            else:
+                return {"data": array([], dtype="uint8"), "status": DRV_ACQUIRING}
+        else:
+            return {"data": array([], dtype="uint8"), "status": DRV_NOT_INITIALIZED}
 
     # These functions do the same thing in this context
     getMostRecentImage16 = getAcquiredData
@@ -220,16 +177,15 @@ class Dummy:
         if cls.initialized:
             if not cls.acquiring:
                 return {
-                    'exposure' : cls.exp_time,
-                    'accumulate' : -1.0,
-                    'kinetic' : -1.0,
-                    'status' : DRV_SUCCESS
+                    "exposure": cls.exp_time,
+                    "accumulate": -1.0,
+                    "kinetic": -1.0,
+                    "status": DRV_SUCCESS,
                 }
             else:
                 return DRV_ACQUIRING
         else:
             return DRV_NOT_INITIALIZED
-
 
     # def getNumberVSSpeeds(speeds):
     #     return 1
@@ -237,18 +193,14 @@ class Dummy:
     # def getNumberVSAmplitudes(number):
     #     return 1
 
-
     # def getVSSpeed(index, speed):
     #     return 1
-
 
     # def getFastestRecommendedVSSpeed(index, speeds):
     #     return 1
 
-
     # def getNumberHSSpeeds(channel, typ, speeds):
     #     return 1
-
 
     # def getHSSpeed(channel, typ, index, speed):
     #     return 1
@@ -257,31 +209,19 @@ class Dummy:
     def getDetector(cls):
         if cls.initialized:
             if not cls.acquiring:
-                return {
-                    'dimensions' : cls.dimensions,
-                    'status' : DRV_SUCCESS
-                }
+                return {"dimensions": cls.dimensions, "status": DRV_SUCCESS}
             else:
-                return {
-                    'dimensions' : (-1, -1),
-                    'status' : DRV_ACQUIRING
-                }
+                return {"dimensions": (-1, -1), "status": DRV_ACQUIRING}
         else:
-            return {
-                'dimensions' : (-1, -1),
-                'status' : DRV_NOT_INITIALIZED
-            }
-
+            return {"dimensions": (-1, -1), "status": DRV_NOT_INITIALIZED}
 
     # def getAcquisitionProgress(acc, series):
     #     return 1
-
 
     # Setter functions
     def noop(*args):
         # Takes any number of arguments, does nothing
         pass
-
 
     # Set to noop func instead of defining each to save space
     # setCurrentCamera = noop
@@ -297,8 +237,8 @@ class Dummy:
         else:
             return DRV_NOT_INITIALIZED
 
-    #setTemperature = noop
-    
+    # setTemperature = noop
+
     @classmethod
     def setShutter(cls, typ, mode, closingtime, openingtime):
         if cls.initialized:
@@ -347,7 +287,7 @@ class Dummy:
             return DRV_SUCCESS
         else:
             return DRV_ACQUIRING
-        
+
     @classmethod
     def setReadMode(cls):
         if cls.initialized:
@@ -400,6 +340,7 @@ class Dummy:
                 return DRV_ACQUIRING
         else:
             return DRV_NOT_INITIALIZED
+
     # setNumberAccumulations = noop
     # setAccumulationCycleTime = noop
     @classmethod
@@ -411,5 +352,5 @@ class Dummy:
                 return DRV_ACQUIRING
         else:
             return DRV_NOT_INITIALIZED
-    # setTriggerMode = noop
 
+    # setTriggerMode = noop

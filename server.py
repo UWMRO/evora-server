@@ -11,7 +11,6 @@ import asyncio
 
 
 async def server_handler(reader, writer):
-
     while True:
         data_bytes = await reader.readline()
         data_str = data_bytes.decode().strip()

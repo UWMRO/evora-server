@@ -1,25 +1,31 @@
 # from evora.dummy import Dummy as andor #andor
-from evora.dummy import Dummy as andor
-from andor_routines import startup, activateCooling, deactivateCooling, acquisition
-from flask import Flask, render_template, request, redirect, jsonify, make_response, send_from_directory, current_app, url_for
 import asyncio
-from astropy.io import fits
-import logging
-import socket
-import os
-import numpy as np
-from datetime import datetime
 import atexit
 import json
+import logging
+import os
+import socket
 import time
+from datetime import datetime
+
+import numpy as np
+from astropy.io import fits
+from flask import (Flask, current_app, jsonify, make_response, redirect,
+                   render_template, request, send_from_directory, url_for)
+
+from andor_routines import (acquisition, activateCooling, deactivateCooling,
+                            startup)
+from evora.dummy import Dummy as andor
+
 """
  dev note: I also ran pip install aioflask and pip install asgiref to try to give flask async abilities.
  this is for handling requests from the filter wheel that may take some time.
 """
 
-logging.getLogger('PIL').setLevel(logging.WARNING)
+logging.getLogger("PIL").setLevel(logging.WARNING)
 
 FITS_PATH = "static/fits_files"
+
 
 def formatFileName(file):
     """
@@ -28,7 +34,7 @@ def formatFileName(file):
     if the file already exists, it will be saved as: name(0), name(1), name(2), ..., name(n)
     """
 
-    invalid_characters = [":", "<", ">", "/", "\\", "\"", "|", "?", "*", ".."]
+    invalid_characters = [":", "<", ">", "/", "\\", '"', "|", "?", "*", ".."]
     # if invalid filename, use image.fits
     if file == "" or any(c in file for c in invalid_characters):
         file = "image.fits"
@@ -52,13 +58,13 @@ def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
 
-    #app.config['UPLOAD_FOLDER'] = 'static/fits_files'
+    # app.config['UPLOAD_FOLDER'] = 'static/fits_files'
 
     logging.basicConfig(level=logging.DEBUG)
 
     if test_config is None:
         # load the instance config, if it exists, when not testing
-        app.config.from_pyfile('config.py', silent=True)
+        app.config.from_pyfile("config.py", silent=True)
     else:
         # load the test config if passed in
         app.config.from_mapping(test_config)
@@ -68,37 +74,37 @@ def create_app(test_config=None):
 
     app.logger.info(f"Startup Status: {str(status['status'])}")
 
-
-    @app.route('/getStatus')
+    @app.route("/getStatus")
     def getStatus():
         return jsonify(andor.getStatus())
 
-    @app.route('/')
+    @app.route("/")
     def index():
-        tempData = andor.getStatusTEC()['temperature']
-        return render_template('index.html', tempData=tempData)
+        tempData = andor.getStatusTEC()["temperature"]
+        return render_template("index.html", tempData=tempData)
 
     # REMEMBER: localhost:5000/temperature
-    @app.route('/getTemperature')
+    @app.route("/getTemperature")
     def route_getTemperature():
         # return str(andor.getStatusTEC()['temperature'])
         print(andor.getStatusTEC())
         return jsonify(andor.getStatusTEC())
 
-
-    @app.route('/setTemperature', methods=['POST'])
+    @app.route("/setTemperature", methods=["POST"])
     def route_setTemperature():
-        if request.method == 'POST':
+        if request.method == "POST":
             req = request.get_json(force=True)
 
             try:
-                req_temperature = int(req['temperature'])
-                app.logger.info(f'Setting temperature to: {req_temperature:.2f} [C]')
+                req_temperature = int(req["temperature"])
+                app.logger.info(f"Setting temperature to: {req_temperature:.2f} [C]")
                 andor.setTargetTEC(req_temperature)
             except ValueError:
-                app.logger.info('Post request received a parameter of invalid type (must be int)')
+                app.logger.info(
+                    "Post request received a parameter of invalid type (must be int)"
+                )
 
-        return str(req['temperature'])
+        return str(req["temperature"])
 
     # def route_setTemperature():
     #     """
@@ -129,20 +135,20 @@ def create_app(test_config=None):
     # def route_getStatusTEC():
     #     return str(andor.getStatusTEC()['status'])
 
-    @app.route('/get_filter_position')
+    @app.route("/get_filter_position")
     def route_get_filter():
         pass
 
-#    @app.route('/setFilter')
-#    async def route_set_filter():
-#        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#        req = request.get_json(force=True)
-#        s.connect(('127.0.0.1', 5503))
-#        #if req['value']
-#        s.send(b'home\n')
-#        received = await s.recv(1000).decode()
-#        s.close()
-#        return received
+    #    @app.route('/setFilter')
+    #    async def route_set_filter():
+    #        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #        req = request.get_json(force=True)
+    #        s.connect(('127.0.0.1', 5503))
+    #        #if req['value']
+    #        s.send(b'home\n')
+    #        received = await s.recv(1000).decode()
+    #        s.close()
+    #        return received
 
     def set_filter(filter):
         res = asyncio.run(set_filter_helper(filter))
@@ -155,23 +161,19 @@ def create_app(test_config=None):
         Moves the filter to the given position.
         """
 
-        filter_dict = {'Ha': 1,
-                       'B' : 2,
-                       'V' : 3,
-                       'g': 4,
-                       'r': 5}
+        filter_dict = {"Ha": 1, "B": 2, "V": 3, "g": 4, "r": 5}
 
         if filter not in filter_dict.keys():
-            raise ValueError('Invalid Filter')
+            raise ValueError("Invalid Filter")
 
         pos_str = f"move {filter_dict[filter]}\n"
-        reader, writer = await asyncio.open_connection('127.0.0.1', 5503)
-        writer.write(pos_str.encode('utf-8'))
+        reader, writer = await asyncio.open_connection("127.0.0.1", 5503)
+        writer.write(pos_str.encode("utf-8"))
         await writer.drain()
         received = await reader.readline()
         writer.close()
         await writer.wait_closed()
-        return {'message': received.decode()}
+        return {"message": received.decode()}
 
     def home_filter():
         res = asyncio.run(home_filter_helper())
@@ -181,33 +183,32 @@ def create_app(test_config=None):
         """
         Homes the filter back to its default position.
         """
-        reader, writer = await asyncio.open_connection('127.0.0.1', 5503)
-        writer.write(b'home\n')
+        reader, writer = await asyncio.open_connection("127.0.0.1", 5503)
+        writer.write(b"home\n")
         await writer.drain()
         received = await reader.readline()
         writer.close()
         await writer.wait_closed()
-        return {'message': received.decode()}
+        return {"message": received.decode()}
 
-    @app.route('/testReturnFITS', methods=['GET'])
+    @app.route("/testReturnFITS", methods=["GET"])
     def route_testReturnFITS():
         acq = acquisition((1024, 1024), exposure_time=0.1)
 
-
-        hdu = fits.PrimaryHDU(data=acq['data'])
+        hdu = fits.PrimaryHDU(data=acq["data"])
         filename = f'{datetime.now().strftime("%m-%d-%Y_T%H%M%S")}.fits'
-        hdu.writeto('./fits_files/' + filename)
+        hdu.writeto("./fits_files/" + filename)
 
         # np.savetxt('./uploads/' + filename, acq['data'], delimiter=',')
-        uploads = os.path.join(current_app.root_path, './fits_files/')
+        uploads = os.path.join(current_app.root_path, "./fits_files/")
         return send_from_directory(uploads, filename, as_attachment=True)
 
-    @app.route('/testLongExposure')
+    @app.route("/testLongExposure")
     def route_testLongExposure():
         acquisition((1024, 1024), exposure_time=10)
-        return str('Finished Acquiring after 10s')
+        return str("Finished Acquiring after 10s")
 
-    @app.route('/capture', methods=["POST"])
+    @app.route("/capture", methods=["POST"])
     def route_capture():
         """
         Attempts to take a picture with the camera. Uses the 'POST' method
@@ -220,12 +221,12 @@ def create_app(test_config=None):
         if request.method == "POST":
             req = request.get_json(force=True)
             req = json.loads(req)
-            dim = andor.getDetector()['dimensions']
+            dim = andor.getDetector()["dimensions"]
 
             # check if acquisition is already in progress
             status = andor.getStatus()
             if status == 20072:
-                return {'message': str('Acquisition already in progress.')}
+                return {"message": str("Acquisition already in progress.")}
 
             # handle filter type - untested, uncomment if using filter wheel
 
@@ -236,7 +237,7 @@ def create_app(test_config=None):
             #     app.logger.info(filter_msg)
 
             # handle img type
-            if req['imgtype'] == 'bias':
+            if req["imgtype"] == "bias":
                 andor.setShutter(1, 2, 50, 50)
                 andor.setImage(1, 1, 1, dim[0], 1, dim[1])
             else:
@@ -245,63 +246,75 @@ def create_app(test_config=None):
 
             # handle exposure type
             # refer to pg 41 - 45 of sdk for acquisition mode info
-            if req['exptype'] == 'Single':
+            if req["exptype"] == "Single":
                 andor.setAcquisitionMode(1)
-                andor.setExposureTime(float(req['exptime']))
+                andor.setExposureTime(float(req["exptime"]))
 
-            elif req['exptype'] == 'Real Time':
+            elif req["exptype"] == "Real Time":
                 # this uses "run till abort" mode - how do we abort it?
                 andor.setAcquisitionMode(5)
                 andor.setExposureTime(0.3)
                 andor.setKineticCycleTime(0)
 
-            elif req['exptype'] == 'Series':
+            elif req["exptype"] == "Series":
                 andor.setAcquisitionMode(3)
-                andor.setNumberKinetics(int(req['expnum']))
-                andor.setExposureTime(float(req['exptime']))
+                andor.setNumberKinetics(int(req["expnum"]))
+                andor.setExposureTime(float(req["exptime"]))
 
             file_name = f"{req['filename']}.fits"
 
             andor.startAcquisition()
             status = andor.getStatus()
             # todo: review parallelism, threading behavior is what we want?
-            while (status == 20072):
+            while status == 20072:
                 status = andor.getStatus()
-                app.logger.info('Acquisition in progress')
+                app.logger.info("Acquisition in progress")
 
-            time.sleep(float(req['exptime']) + 0.5)
-            img = andor.getAcquiredData(dim) # TODO: throws an error here! gotta wait for acquisition
+            time.sleep(float(req["exptime"]) + 0.5)
+            img = andor.getAcquiredData(
+                dim
+            )  # TODO: throws an error here! gotta wait for acquisition
 
-            if img['status'] == 20002:
+            if img["status"] == 20002:
                 # use astropy here to write a fits file
-                andor.setShutter(1, 0, 50, 50) #closes shutter
+                andor.setShutter(1, 0, 50, 50)  # closes shutter
                 # home_filter() # uncomment if using filter wheel
-                hdu = fits.PrimaryHDU(img['data'])
-                hdu.header['EXP_TIME'] = (float(req['exptime']), "Exposure Time (Seconds)")
-                hdu.header['EXP_TYPE'] = (str(req['exptype']), "Exposure Type (Single, Real Time, or Series)")
-                hdu.header['IMG_TYPE'] = (str(req['imgtype']), "Image Type (Bias, Flat, Dark, or Object)")
-                hdu.header['FILTER'] = (str(req['filtype']), "Filter (Ha, B, V, g, r)")
+                hdu = fits.PrimaryHDU(img["data"])
+                hdu.header["EXP_TIME"] = (
+                    float(req["exptime"]),
+                    "Exposure Time (Seconds)",
+                )
+                hdu.header["EXP_TYPE"] = (
+                    str(req["exptype"]),
+                    "Exposure Type (Single, Real Time, or Series)",
+                )
+                hdu.header["IMG_TYPE"] = (
+                    str(req["imgtype"]),
+                    "Image Type (Bias, Flat, Dark, or Object)",
+                )
+                hdu.header["FILTER"] = (str(req["filtype"]), "Filter (Ha, B, V, g, r)")
 
-                fname = req['filename']
+                fname = req["filename"]
                 fname = formatFileName(fname)
                 hdu.writeto(f"{FITS_PATH}/{fname}", overwrite=True)
 
-                return {"filename":fname,
-                        "url":url_for('static', filename = f'fits_files/{fname}'),
-                        "message": "Capture Successful"}
+                return {
+                    "filename": fname,
+                    "url": url_for("static", filename=f"fits_files/{fname}"),
+                    "message": "Capture Successful",
+                }
 
             else:
                 andor.setShutter(1, 0, 50, 50)
-                home_filter() # uncomment if using filter wheel
-                return {"message": str('Capture Unsuccessful')}
-
+                home_filter()  # uncomment if using filter wheel
+                return {"message": str("Capture Unsuccessful")}
 
     # we shouldn't download files locally - instead, lets upload them to server instead
-    #def send_file(file_name):
+    # def send_file(file_name):
     #   uploads = os.path.join(current_app.root_path, './fits_files/')
     #   return send_from_directory(uploads, file_name, as_attachment=True)
 
-    @app.route('/fw_test')
+    @app.route("/fw_test")
     def route_fw_test_helper():
         res = asyncio.run(route_fw_test())
         return res
@@ -311,28 +324,26 @@ def create_app(test_config=None):
         Tests the example server server.py
         """
 
-        reader, writer = await asyncio.open_connection('127.0.0.1', 5503)
-        writer.write(b'getFilter\n')
+        reader, writer = await asyncio.open_connection("127.0.0.1", 5503)
+        writer.write(b"getFilter\n")
         await writer.drain()
         received = await reader.readline()
         writer.close()
         await writer.wait_closed()
 
-        return {'message': received.decode()}
-
-
-
+        return {"message": received.decode()}
 
     return app
 
+
 def OnExitApp():
     andor.shutdown()
+
 
 atexit.register(OnExitApp)
 
 app = create_app()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(host="127.0.0.1", port=3000)
-

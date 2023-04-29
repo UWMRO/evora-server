@@ -1,59 +1,59 @@
-import unittest
 import sys
-  
+import unittest
+
 # setting path
-sys.path.append('../evora')
+sys.path.append("../evora")
 from andor import *
 
 
 def test_initialize():
-   assert initialize() == 20002
+    assert initialize() == 20002
 
 
 def test_setAcquisitionMode():
-   assert setAcquisitionMode() == 20002
+    assert setAcquisitionMode() == 20002
 
 
 def test_setExposureTime():
-   assert setExposure() == 20002
+    assert setExposure() == 20002
 
 
 def test_setShutter():
-   assert setShutter() == 20002
+    assert setShutter() == 20002
 
 
 def test_setImage():
-   assert setImage() == 20002
+    assert setImage() == 20002
 
 
 def test_setFanMode():
-   assert setFanMode() == 20002
+    assert setFanMode() == 20002
 
 
 def test_coolerOn():
-   assert coolerOn() == 20002
+    assert coolerOn() == 20002
 
 
 def test_coolerOff():
-   assert coolerOff() == 20002
+    assert coolerOff() == 20002
 
 
 def test_setTargetTEC():
-   assert setTargetTEC() == 20002
+    assert setTargetTEC() == 20002
 
 
 def test_startAcquisition():
-   assert startAcquisition() == 20002
+    assert startAcquisition() == 20002
 
 
 def test_getStatus():
-   assert getStatus() == 20002
+    assert getStatus() == 20002
 
 
 def main():
-   test_initialize()
+    test_initialize()
 
 
-if __name__ == '__main__':
-   main()
-   shutdown()
+if __name__ == "__main__":
+    main()
+    shutdown()
