@@ -1,43 +1,72 @@
-from andor_routines import startup, activateCooling, deactivateCooling, acquisition
-from flask import Flask, render_template, request, redirect, jsonify, make_response, send_from_directory, current_app, url_for
 import asyncio
-from astropy.io import fits
-import logging
-import socket
-import os
-import numpy as np
-from datetime import datetime
 import atexit
+from glob import glob
 import json
+import logging
+import os
+import re
 import time
+from datetime import datetime
 
+from astropy.io import fits
+from astropy.time import Time
+from flask import (
+    Flask,
+    current_app,
+    jsonify,
+    render_template,
+    request,
+    send_from_directory,
+)
+
+from andor_routines import acquisition, activateCooling, startup
 from debug import DEBUGGING
-if (DEBUGGING):
-    from evora.dummy import Dummy as andor #andor
+
+if DEBUGGING:
+    from evora.dummy import Dummy as andor  # andor
 else:
     from evora import andor
 
 """
- dev note: I also ran pip install aioflask and pip install asgiref to try to give flask async abilities.
+ dev note: I also ran pip install aioflask and pip install asgiref to try to give
+ flask async abilities.
  this is for handling requests from the filter wheel that may take some time.
 """
 
 logging.getLogger("PIL").setLevel(logging.WARNING)
 
-FITS_PATH = "static/fits_files"
+DEFAULT_PATH = "/data/ecam"
 
 
-def formatFileName(file):
+def getFilePath(file):
     """
     Formats the given file name to be valid.
     If the file contains invalid characters or is empty, image.fits will be used.
-    if the file already exists, it will be saved as: name(0), name(1), name(2), ..., name(n)
+    if the file already exists, it will be saved as:
+        name(0), name(1), name(2), ..., name(n)
     """
+
+    default_image_name = "ecam-{seq:04d}.fits"
+
+    date = Time.now().utc.isot.split("T")[0].replace("-", "")
+
+    path = os.path.join(DEFAULT_PATH, date)
+    os.makedirs(path, exist_ok=True)
 
     invalid_characters = [":", "<", ">", "/", "\\", '"', "|", "?", "*", ".."]
     # if invalid filename, use image.fits
-    if file == "" or any(c in file for c in invalid_characters):
-        file = "image.fits"
+    if file is None or file == "" or any(c in file for c in invalid_characters):
+        all_files = list(sorted(glob(os.path.join(path, "ecam-*.fits"))))
+        print(all_files)
+        if len(all_files) == 0:
+            seq = 1
+        else:
+            match = re.search(r"ecam\-([0-9]+)", all_files[-1])
+            if match:
+                seq = int(match.group(1)) + 1
+            else:
+                seq = 1
+        file = default_image_name.format(seq=seq)
 
     # ensure extension is .fits
     if file[-1] == ".":
@@ -48,10 +77,11 @@ def formatFileName(file):
     # ensure nothing gets overwritten
     num = 0
     length = len(file[0:-5])
-    while os.path.isfile(f"{FITS_PATH}/{file}"):
+    while os.path.isfile(f"{DEFAULT_PATH}/{file}"):
         file = file[0:length] + f"({num})" + file[-5:]
         num += 1
-    return file
+
+    return os.path.join(path, file)
 
 
 def create_app(test_config=None):
@@ -155,7 +185,8 @@ def create_app(test_config=None):
         return res
 
     async def set_filter_helper(filter):
-        # these filter positions are placeholders - need to find which filter corresponds
+        # these filter positions are placeholders - need to find which filter
+        #   corresponds
         # to each position on the wheel
         """
         Moves the filter to the given position.
@@ -261,7 +292,7 @@ def create_app(test_config=None):
                 andor.setNumberKinetics(int(req["expnum"]))
                 andor.setExposureTime(float(req["exptime"]))
 
-            file_name = f"{req['filename']}.fits"
+            file_name = getFilePath(None)
 
             andor.startAcquisition()
             status = andor.getStatus()
@@ -294,19 +325,17 @@ def create_app(test_config=None):
                 )
                 hdu.header["FILTER"] = (str(req["filtype"]), "Filter (Ha, B, V, g, r)")
 
-                fname = req["filename"]
-                fname = formatFileName(fname)
-                hdu.writeto(f"{FITS_PATH}/{fname}", overwrite=True)
+                hdu.writeto(file_name, overwrite=True)
 
                 return {
-                    "filename": fname,
-                    "url": url_for("static", filename=f"fits_files/{fname}"),
+                    "filename": os.path.basename(file_name),
+                    "url": file_name,
                     "message": "Capture Successful",
                 }
 
             else:
                 andor.setShutter(1, 0, 50, 50)
-                home_filter()  # uncomment if using filter wheel
+                # home_filter()  # uncomment if using filter wheel
                 return {"message": str("Capture Unsuccessful")}
 
     # we shouldn't download files locally - instead, lets upload them to server instead
@@ -346,4 +375,4 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=3000)
+    app.run(host="127.0.0.1", port=3000, debug=True)
