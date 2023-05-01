@@ -33,27 +33,31 @@ PYBIND11_MODULE(andor_wrapper, m) {
         py::arg("andor_dir") = "/usr/local/etc/andor"
     );
 
-    m.def("setReadMode",	        &SetReadMode,           "Set Read Mode");
-    m.def("shutdown",		        &ShutDown,              "Shutdown the Andor Camera");
-    m.def("setAcquisitionMode",	    &SetAcquisitionMode,	"Set acquisition mode");
-    m.def("setExposureTime",	    &SetExposureTime,	    "Set exposure time of shot");
+    m.def("setReadMode",	            &SetReadMode,               "Set Read Mode");
+    m.def("shutdown",		            &ShutDown,                  "Shutdown the Andor Camera");
+    m.def("setAcquisitionMode",	        &SetAcquisitionMode,	    "Set acquisition mode");
+    m.def("setExposureTime",	        &SetExposureTime,	        "Set exposure time of shot");
+    m.def("setAccumulationCycleTime",   &SetAccumulationCycleTime,  "Set the time between the start of individual scans");
+    m.def("setNumberAccumulations",     &SetNumberAccumulations,    "Set the number of accumulations in a set");
+    m.def("setNumberKinetics",          &SetNumberKinetics,         "Set the number of SETS of accumulated scans");
+    m.def("setKineticCycleTime",        &SetKineticCycleTime,       "Set the time between the start of SETS of accumulated scans");
     m.def("getAcquisitionTimings",  
-                                    [](void) {
-                                        float exposure, accumulate, kinetic;
-                                        exposure = -1;
-                                        accumulate = -1;
-                                        kinetic = -1;
+                                        [](void) {
+                                            float exposure, accumulate, kinetic;
+                                            exposure = -1;
+                                            accumulate = -1;
+                                            kinetic = -1;
 
-                                        int status;
-                                        status = GetAcquisitionTimings(&exposure, &accumulate, &kinetic);
-                                        py::dict out;
-                                        out["exposure"] = exposure;
-                                        out["accumulate"] = accumulate;
-                                        out["kinetic"] = kinetic;
-                                        out["status"] = status;
+                                            int status;
+                                            status = GetAcquisitionTimings(&exposure, &accumulate, &kinetic);
+                                            py::dict out;
+                                            out["exposure"] = exposure;
+                                            out["accumulate"] = accumulate;
+                                            out["kinetic"] = kinetic;
+                                            out["status"] = status;
 
-                                        return out;
-                                    },                      "Get current camera timing settings");
+                                            return out;
+                                        },                          "Get current camera timing settings");
     m.def("getStatus",		
                                 [](void) {
                                     int status;
