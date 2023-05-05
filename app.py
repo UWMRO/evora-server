@@ -112,7 +112,6 @@ def create_app(test_config=None):
         tempData = andor.getStatusTEC()["temperature"]
         return render_template("index.html", tempData=tempData)
 
-
     @app.route("/getTemperature")
     def route_getTemperature():
         # return str(andor.getStatusTEC()['temperature'])
@@ -310,9 +309,7 @@ def create_app(test_config=None):
                 andor.setShutter(1, 0, 50, 50)  # closes shutter
                 # home_filter() # uncomment if using filter wheel
                 hdu = fits.PrimaryHDU(img["data"])
-                hdu.header["COMMENT"] = (
-                    req["comment"]
-                )
+                hdu.header["COMMENT"] = req["comment"]
                 hdu.header["EXP_TIME"] = (
                     float(req["exptime"]),
                     "Exposure Time (Seconds)",
@@ -327,8 +324,8 @@ def create_app(test_config=None):
                 )
                 hdu.header["FILTER"] = (str(req["filtype"]), "Filter (Ha, B, V, g, r)")
                 hdu.header["TEMP"] = (
-                    str(f'{andor.getStatusTEC()['temperature']:.2f}'),
-                    "CCD Temperature during Exposure"
+                    str(f"{andor.getStatusTEC()['temperature']:.2f}"),
+                    "CCD Temperature during Exposure",
                 )
                 hdu.writeto(file_name, overwrite=True)
 
