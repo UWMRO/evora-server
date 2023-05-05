@@ -326,7 +326,10 @@ def create_app(test_config=None):
                     "Image Type (Bias, Flat, Dark, or Object)",
                 )
                 hdu.header["FILTER"] = (str(req["filtype"]), "Filter (Ha, B, V, g, r)")
-
+                hdu.header["TEMP"] = (
+                    str(f'{andor.getStatusTEC()['temperature']:.2f}'),
+                    "CCD Temperature during Exposure"
+                )
                 hdu.writeto(file_name, overwrite=True)
 
                 return {
