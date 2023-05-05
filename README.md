@@ -36,6 +36,12 @@ flask --debug run --port 3000
 
 To run the server in debug mode, with the dummy module mocking the camera, edit `debug.py` and set `DEBUGGING = True`.
 
+## Images
+
+`evora-server` will save camera files to `/data/ecam/DATE` where `DATE` is in the format `20230504` and rotates at midnight UTC.
+
+If `/data/ecam` does not exist, create it with `mkdir -p` and make sure it has the right permissions for `evora-server` to write to it.
+
 ## Deploying for production
 
 The recommended way to deploy `evora-server` is behind a [gunicorn](https://gunicorn.org) web server. To run the Flask webapp from `gunicorn`, execute
