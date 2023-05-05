@@ -42,6 +42,7 @@ class Dummy:
         elapsed = 0.0
         while (elapsed < cls.exp_time) and not cls.__thread_stop:
             time.sleep(cls.exp_time)
+            elapsed += cls.exp_time
         cls.acquiring = False
         cls.__thread_stop = False
 
