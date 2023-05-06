@@ -203,61 +203,6 @@ def create_app(test_config=None):
     # def route_getStatusTEC():
     #     return str(andor.getStatusTEC()['status'])
 
-    @app.route("/get_filter_position")
-    def route_get_filter():
-        pass
-
-    #    @app.route('/setFilter')
-    #    async def route_set_filter():
-    #        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    #        req = request.get_json(force=True)
-    #        s.connect(('127.0.0.1', 5503))
-    #        #if req['value']
-    #        s.send(b'home\n')
-    #        received = await s.recv(1000).decode()
-    #        s.close()
-    #        return received
-
-    def set_filter(filter):
-        res = asyncio.run(set_filter_helper(filter))
-        return res
-
-    async def set_filter_helper(filter):
-        # these filter positions are placeholders - need to find which filter
-        #   corresponds
-        # to each position on the wheel
-        """
-        Moves the filter to the given position.
-        """
-
-        if filter not in filter_dict.keys():
-            raise ValueError("Invalid Filter")
-
-        pos_str = f"move {filter_dict[filter]}\n"
-        reader, writer = await asyncio.open_connection("127.0.0.1", 5503)
-        writer.write(pos_str.encode("utf-8"))
-        await writer.drain()
-        received = await reader.readline()
-        writer.close()
-        await writer.wait_closed()
-        return {"message": received.decode()}
-
-    def home_filter():
-        res = asyncio.run(home_filter_helper())
-        return res
-
-    async def home_filter_helper():
-        """
-        Homes the filter back to its default position.
-        """
-        reader, writer = await asyncio.open_connection("127.0.0.1", 5503)
-        writer.write(b"home\n")
-        await writer.drain()
-        received = await reader.readline()
-        writer.close()
-        await writer.wait_closed()
-        return {"message": received.decode()}
-
     @app.route("/testReturnFITS", methods=["GET"])
     def route_testReturnFITS():
         acq = acquisition((1024, 1024), exposure_time=0.1)
@@ -384,10 +329,11 @@ def create_app(test_config=None):
 
         status, reply = await send_to_wheel("get")
         filter_name = None
+        error = ""
 
         if status:
             success = True
-            filter_pos = int(received.split(",")[1])
+            filter_pos = int(reply)
             filter_name = FILTER_DICT_REVERSE[filter_pos]
         else:
             success = False
@@ -395,7 +341,7 @@ def create_app(test_config=None):
 
         return jsonify({"success": success, "filter": filter_name, "error": error})
 
-    @app.route("/setFilterWheel", methods=["GET"])
+    @app.route("/setFilterWheel", methods=["POST"])
     async def route_set_filter_wheel():
         """Moves the filter wheel to a given position by filter name."""
 
@@ -405,7 +351,7 @@ def create_app(test_config=None):
             error="",
         )
 
-        if request.method == "GET":
+        if request.method == "POST":
             req = request.get_json(force=True)
         else:
             payload["error"] = "Invalid request method."
@@ -431,7 +377,7 @@ def create_app(test_config=None):
 
         return jsonify(payload)
 
-    @app.route("/homeFilterWheel", methods=["GET"])
+    @app.route("/homeFilterWheel")
     async def route_home_filter_wheel():
         """Homes the filter wheel."""
 
@@ -442,12 +388,13 @@ def create_app(test_config=None):
         )
 
         status, reply = await send_to_wheel("home")
+        print(status, reply)
         payload["success"] = status
         if status:
             payload["message"] = "Filter wheel has been homed."
         else:
             payload["error"] = reply
-
+        print(payload)
         return jsonify(payload)
 
     return app
