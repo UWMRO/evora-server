@@ -50,7 +50,27 @@ The recommended way to deploy `evora-server` is behind a [gunicorn](https://guni
 gunicorn -w 4 'app:app'
 ```
 
-which will spin a web server with four workers. This command should be wrapped in a daemon or systemd service to be executed in the background.
+which will spin a web server with four workers. To run this command in the background as a systemd service, create a file `/etc/systemd/system/evora-server.service` with the contents
+
+```ini
+[Unit]
+Description=evora-server
+
+[Service]
+WorkingDirectory=/home/mrouser/Github/evora-server
+ExecStart=/home/mrouser/Github/evora-server/gunicorn-start.sh
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Here we are pointing to the file `gunicorn-start.sh` in the repo, which loads the conda environment and starts gunicorn. This may need to be changed for a location other than MRO. Then start the systemd service with
+
+```console
+sudo systemctl daemon-reload
+sudo systemctl enable --now enable evora-server
+sudo systemctl restart evora-server
+```
 
 ### Configuring nginx
 
