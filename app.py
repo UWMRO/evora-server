@@ -35,6 +35,9 @@ else:
 
 logging.getLogger("PIL").setLevel(logging.WARNING)
 
+FILTER_DICT = {"Ha": 1, "B": 2, "V": 3, "g": 4, "r": 5}
+FILTER_DICT_REVERSE = {1: "Ha", 2: "B", 3: "V", 4: "g", 5: "r"}
+
 DEFAULT_PATH = "/data/ecam"
 
 
@@ -190,8 +193,6 @@ def create_app(test_config=None):
         Moves the filter to the given position.
         """
 
-        filter_dict = {"Ha": 1, "B": 2, "V": 3, "g": 4, "r": 5}
-
         if filter not in filter_dict.keys():
             raise ValueError("Invalid Filter")
 
@@ -340,29 +341,28 @@ def create_app(test_config=None):
                 # home_filter()  # uncomment if using filter wheel
                 return {"message": str("Capture Unsuccessful")}
 
-    # we shouldn't download files locally - instead, lets upload them to server instead
-    # def send_file(file_name):
-    #   uploads = os.path.join(current_app.root_path, './fits_files/')
-    #   return send_from_directory(uploads, file_name, as_attachment=True)
+    @app.route("/getFilterWheel")
+    async def route_get_filter_wheel():
+        """Returns the position of the filter wheel."""
 
-    @app.route("/fw_test")
-    def route_fw_test_helper():
-        res = asyncio.run(route_fw_test())
-        return res
-
-    async def route_fw_test():
-        """
-        Tests the example server server.py
-        """
-
-        reader, writer = await asyncio.open_connection("127.0.0.1", 5503)
-        writer.write(b"getFilter\n")
+        reader, writer = await asyncio.open_connection("127.0.0.1", 9999)
+        writer.write(b"get\n")
         await writer.drain()
-        received = await reader.readline()
+
+        received = (await reader.readline()).decode()
+        print(received)
         writer.close()
         await writer.wait_closed()
 
-        return {"message": received.decode()}
+        filter_name = None
+        if received.startswith("ERR"):
+            success = False
+        else:
+            success = True
+            filter_pos = int(received.split(",")[1])
+            filter_name = FILTER_DICT_REVERSE[filter_pos]
+
+        return jsonify({"success": success, "filter": filter_name})
 
     return app
 
