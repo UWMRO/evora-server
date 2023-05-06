@@ -293,6 +293,8 @@ def create_app(test_config=None):
 
             file_name = f"{DEFAULT_PATH}\\temp.fits" if exptype == "Real Time" else getFilePath(None)
 
+            date_obs = Time.now()
+
             andor.startAcquisition()
             status = andor.getStatus()
             # todo: review parallelism, threading behavior is what we want?
@@ -310,6 +312,7 @@ def create_app(test_config=None):
                 andor.setShutter(1, 0, 50, 50)  # closes shutter
                 # home_filter() # uncomment if using filter wheel
                 hdu = fits.PrimaryHDU(img["data"])
+                hdu.header["DATE-OBS"] = date_obs.isot
                 hdu.header["COMMENT"] = req["comment"]
                 hdu.header["EXP_TIME"] = (
                     float(req["exptime"]),
