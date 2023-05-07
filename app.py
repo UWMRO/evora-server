@@ -388,7 +388,6 @@ def create_app(test_config=None):
         )
 
         status, reply = await send_to_wheel("home")
-        print(status, reply)
         payload["success"] = status
         if status:
             payload["message"] = "Filter wheel has been homed."
