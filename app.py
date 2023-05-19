@@ -48,7 +48,7 @@ def formatFileName(file):
     # ensure nothing gets overwritten
     num = 0
     length = len(file[0:-5])
-    while os.path.isfile(f"{FITS_PATH}/{file}"):
+    while os.path.isfile(f"{DEFAULT_PATH}\\{file}"):
         file = file[0:length] + f"({num})" + file[-5:]
         num += 1
     return file
@@ -258,22 +258,29 @@ def create_app(test_config=None):
 
             # handle exposure type
             # refer to pg 41 - 45 of sdk for acquisition mode info
-            if req["exptype"] == "Single":
+            exptype = req["exptype"]
+            if exptype == "Single":
                 andor.setAcquisitionMode(1)
                 andor.setExposureTime(float(req["exptime"]))
 
-            elif req["exptype"] == "Real Time":
+            elif exptype == "Real Time":
                 # this uses "run till abort" mode - how do we abort it?
                 andor.setAcquisitionMode(5)
                 andor.setExposureTime(0.3)
                 andor.setKineticCycleTime(0)
 
-            elif req["exptype"] == "Series":
+            elif exptype == "Series":
                 andor.setAcquisitionMode(3)
                 andor.setNumberKinetics(int(req["expnum"]))
                 andor.setExposureTime(float(req["exptime"]))
 
-            file_name = f"{req['filename']}.fits"
+            file_name = (
+                f"{DEFAULT_PATH}\\temp.fits"
+                if exptype == "Real Time"
+                else getFilePath(None)
+            )
+
+            date_obs = Time.now()
 
             andor.startAcquisition()
             status = andor.getStatus()
@@ -306,9 +313,14 @@ def create_app(test_config=None):
                 )
                 hdu.header["FILTER"] = (str(req["filtype"]), "Filter (Ha, B, V, g, r)")
 
-                fname = req["filename"]
-                fname = formatFileName(fname)
-                hdu.writeto(f"{FITS_PATH}/{fname}", overwrite=True)
+                hdu.header["TEMP"] = (
+                    str(f"{andor.getStatusTEC()['temperature']:.2f}"),
+                    "CCD Temperature during Exposure",
+                )
+                try:
+                    hdu.writeto(file_name, overwrite=True)
+                except:
+                    print("Failed to write")
 
                 return {
                     "filename": fname,
