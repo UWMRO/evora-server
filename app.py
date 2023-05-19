@@ -35,14 +35,10 @@ else:
 
 logging.getLogger("PIL").setLevel(logging.WARNING)
 
-<<<<<<< HEAD
-DEFAULT_PATH = "\\data\\ecam"
-=======
 FILTER_DICT = {"Home": 0, "Ha": 1, "B": 2, "V": 3, "g": 4, "r": 5}
 FILTER_DICT_REVERSE = {0: "Home", 1: "Ha", 2: "B", 3: "V", 4: "g", 5: "r"}
 
 DEFAULT_PATH = "/data/ecam"
->>>>>>> main
 
 
 def getFilePath(file):
@@ -278,7 +274,11 @@ def create_app(test_config=None):
                 andor.setNumberKinetics(int(req["expnum"]))
                 andor.setExposureTime(float(req["exptime"]))
 
-            file_name = f"{DEFAULT_PATH}\\temp.fits" if exptype == "Real Time" else getFilePath(None)
+            file_name = (
+                f"{DEFAULT_PATH}\\temp.fits"
+                if exptype == "Real Time"
+                else getFilePath(None)
+            )
 
             date_obs = Time.now()
 
