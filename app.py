@@ -1,74 +1,43 @@
+# from evora.dummy import Dummy as andor #andor
 import asyncio
 import atexit
-from glob import glob
 import json
 import logging
 import os
-import re
+import socket
 import time
 from datetime import datetime
 
+import numpy as np
 from astropy.io import fits
-from astropy.time import Time
-from flask import (
-    Flask,
-    current_app,
-    jsonify,
-    render_template,
-    request,
-    send_from_directory,
-)
+from flask import (Flask, current_app, jsonify, make_response, redirect,
+                   render_template, request, send_from_directory, url_for)
 
-from andor_routines import acquisition, activateCooling, startup
-from debug import DEBUGGING
-
-if DEBUGGING:
-    from evora.dummy import Dummy as andor  # andor
-else:
-    from evora import andor
+from andor_routines import (acquisition, activateCooling, deactivateCooling,
+                            startup)
+from evora.dummy import Dummy as andor
 
 """
- dev note: I also ran pip install aioflask and pip install asgiref to try to give
- flask async abilities.
+ dev note: I also ran pip install aioflask and pip install asgiref to try to give flask async abilities.
  this is for handling requests from the filter wheel that may take some time.
 """
 
 logging.getLogger("PIL").setLevel(logging.WARNING)
 
-FILTER_DICT = {"Home": 0, "Ha": 1, "B": 2, "V": 3, "g": 4, "r": 5}
-FILTER_DICT_REVERSE = {0: "Home", 1: "Ha", 2: "B", 3: "V", 4: "g", 5: "r"}
-
-DEFAULT_PATH = "/data/ecam"
+FITS_PATH = "static/fits_files"
 
 
-def getFilePath(file):
+def formatFileName(file):
     """
     Formats the given file name to be valid.
     If the file contains invalid characters or is empty, image.fits will be used.
-    if the file already exists, it will be saved as:
-        name(0), name(1), name(2), ..., name(n)
+    if the file already exists, it will be saved as: name(0), name(1), name(2), ..., name(n)
     """
-
-    default_image_name = "ecam-{seq:04d}.fits"
-
-    date = Time.now().utc.isot.split("T")[0].replace("-", "")
-
-    path = os.path.join(DEFAULT_PATH, date)
-    os.makedirs(path, exist_ok=True)
 
     invalid_characters = [":", "<", ">", "/", "\\", '"', "|", "?", "*", ".."]
     # if invalid filename, use image.fits
-    if file is None or file == "" or any(c in file for c in invalid_characters):
-        all_files = list(sorted(glob(os.path.join(path, "ecam-*.fits"))))
-        if len(all_files) == 0:
-            seq = 1
-        else:
-            match = re.search(r"ecam\-([0-9]+)", all_files[-1])
-            if match:
-                seq = int(match.group(1)) + 1
-            else:
-                seq = 1
-        file = default_image_name.format(seq=seq)
+    if file == "" or any(c in file for c in invalid_characters):
+        file = "image.fits"
 
     # ensure extension is .fits
     if file[-1] == ".":
@@ -79,48 +48,10 @@ def getFilePath(file):
     # ensure nothing gets overwritten
     num = 0
     length = len(file[0:-5])
-    while os.path.isfile(f"{DEFAULT_PATH}/{file}"):
+    while os.path.isfile(f"{FITS_PATH}/{file}"):
         file = file[0:length] + f"({num})" + file[-5:]
         num += 1
-
-    return os.path.join(path, file)
-
-
-async def send_to_wheel(command: str):
-    """Sends a command to the filter wheel and parses the reply.
-
-    Parameters
-    ----------
-    command
-        The string to send to the filter wheel server.
-
-    Returns
-    -------
-    res
-        A tuple of response status as a boolean, and the additional reply
-        as a string (the reply string will be empty if no additional reply is
-        provided).
-
-    """
-
-    reader, writer = await asyncio.open_connection("127.0.0.1", 9999)
-    writer.write((command + "\n").encode())
-    await writer.drain()
-
-    received = (await reader.readline()).decode()
-    writer.close()
-    await writer.wait_closed()
-
-    parts = received.split(",")
-
-    status = parts[0] == "OK"
-
-    if len(parts) > 1:
-        reply = parts[1]
-    else:
-        reply = ""
-
-    return status, reply
+    return file
 
 
 def create_app(test_config=None):
@@ -138,10 +69,22 @@ def create_app(test_config=None):
         # load the test config if passed in
         app.config.from_mapping(test_config)
 
-    status = startup()
-    activateCooling()
+    # status = startup()
+    # activateCooling()
 
-    app.logger.info(f"Startup Status: {str(status['status'])}")
+    # app.logger.info(f"Startup Status: {str(status['status'])}")
+
+    @app.route("/initialize")
+    def route_initialize():
+        status = startup()
+        activateCooling() # might want to modify return status of this function
+        return status
+
+    @app.route("/shutdown")
+    def route_shutdown():
+        deactivateCooling()
+        status = andor.shutdown()
+        return jsonify(status)
 
     @app.route("/getStatus")
     def getStatus():
@@ -152,6 +95,7 @@ def create_app(test_config=None):
         tempData = andor.getStatusTEC()["temperature"]
         return render_template("index.html", tempData=tempData)
 
+    # REMEMBER: localhost:5000/temperature
     @app.route("/getTemperature")
     def route_getTemperature():
         # return str(andor.getStatusTEC()['temperature'])
@@ -202,6 +146,62 @@ def create_app(test_config=None):
     # @app.route('/getStatusTEC')
     # def route_getStatusTEC():
     #     return str(andor.getStatusTEC()['status'])
+
+    @app.route("/get_filter_position")
+    def route_get_filter():
+        pass
+
+    #    @app.route('/setFilter')
+    #    async def route_set_filter():
+    #        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #        req = request.get_json(force=True)
+    #        s.connect(('127.0.0.1', 5503))
+    #        #if req['value']
+    #        s.send(b'home\n')
+    #        received = await s.recv(1000).decode()
+    #        s.close()
+    #        return received
+
+    def set_filter(filter):
+        res = asyncio.run(set_filter_helper(filter))
+        return res
+
+    async def set_filter_helper(filter):
+        # these filter positions are placeholders - need to find which filter corresponds
+        # to each position on the wheel
+        """
+        Moves the filter to the given position.
+        """
+
+        filter_dict = {"Ha": 1, "B": 2, "V": 3, "g": 4, "r": 5}
+
+        if filter not in filter_dict.keys():
+            raise ValueError("Invalid Filter")
+
+        pos_str = f"move {filter_dict[filter]}\n"
+        reader, writer = await asyncio.open_connection("127.0.0.1", 5503)
+        writer.write(pos_str.encode("utf-8"))
+        await writer.drain()
+        received = await reader.readline()
+        writer.close()
+        await writer.wait_closed()
+        return {"message": received.decode()}
+
+    def home_filter():
+        res = asyncio.run(home_filter_helper())
+        return res
+
+    async def home_filter_helper():
+        """
+        Homes the filter back to its default position.
+        """
+        reader, writer = await asyncio.open_connection("127.0.0.1", 5503)
+        writer.write(b"home\n")
+        await writer.drain()
+        received = await reader.readline()
+        writer.close()
+        await writer.wait_closed()
+        return {"message": received.decode()}
 
     @app.route("/testReturnFITS", methods=["GET"])
     def route_testReturnFITS():
@@ -273,18 +273,16 @@ def create_app(test_config=None):
                 andor.setNumberKinetics(int(req["expnum"]))
                 andor.setExposureTime(float(req["exptime"]))
 
-            file_name = getFilePath(None)
-
-            date_obs = Time.now()
+            file_name = f"{req['filename']}.fits"
 
             andor.startAcquisition()
             status = andor.getStatus()
             # todo: review parallelism, threading behavior is what we want?
-            while status == 20072:
-                status = andor.getStatus()
-                app.logger.info("Acquisition in progress")
+            # while status == 20072:
+            #     status = andor.getStatus()
+            #     app.logger.info("Acquisition in progress")
 
-            time.sleep(float(req["exptime"]) + 0.5)
+            time.sleep(float(req["exptime"]) + 0.2)
             img = andor.getAcquiredData(
                 dim
             )  # TODO: throws an error here! gotta wait for acquisition
@@ -294,8 +292,6 @@ def create_app(test_config=None):
                 andor.setShutter(1, 0, 50, 50)  # closes shutter
                 # home_filter() # uncomment if using filter wheel
                 hdu = fits.PrimaryHDU(img["data"])
-                hdu.header["DATE-OBS"] = date_obs.isot
-                hdu.header["COMMENT"] = req["comment"]
                 hdu.header["EXP_TIME"] = (
                     float(req["exptime"]),
                     "Exposure Time (Seconds)",
@@ -309,100 +305,51 @@ def create_app(test_config=None):
                     "Image Type (Bias, Flat, Dark, or Object)",
                 )
                 hdu.header["FILTER"] = (str(req["filtype"]), "Filter (Ha, B, V, g, r)")
-                hdu.header["TEMP"] = (
-                    str(f"{andor.getStatusTEC()['temperature']:.2f}"),
-                    "CCD Temperature during Exposure",
-                )
-                hdu.writeto(file_name, overwrite=True)
+
+                fname = req["filename"]
+                fname = formatFileName(fname)
+                hdu.writeto(f"{FITS_PATH}/{fname}", overwrite=True)
 
                 return {
-                    "filename": os.path.basename(file_name),
-                    "url": file_name,
+                    "filename": fname,
+                    "url": url_for("static", filename=f"fits_files/{fname}"),
                     "message": "Capture Successful",
                 }
 
             else:
                 andor.setShutter(1, 0, 50, 50)
-                # home_filter()  # uncomment if using filter wheel
+                home_filter()  # uncomment if using filter wheel
                 return {"message": str("Capture Unsuccessful")}
 
-    @app.route("/getFilterWheel")
-    async def route_get_filter_wheel():
-        """Returns the position of the filter wheel."""
+    # we shouldn't download files locally - instead, lets upload them to server instead
+    # def send_file(file_name):
+    #   uploads = os.path.join(current_app.root_path, './fits_files/')
+    #   return send_from_directory(uploads, file_name, as_attachment=True)
 
-        status, reply = await send_to_wheel("get")
-        filter_name = None
-        error = ""
+    @app.route("/fw_test")
+    def route_fw_test_helper():
+        res = asyncio.run(route_fw_test())
+        return res
 
-        if status:
-            success = True
-            filter_pos = int(reply)
-            filter_name = FILTER_DICT_REVERSE[filter_pos]
-        else:
-            success = False
-            error = reply
+    async def route_fw_test():
+        """
+        Tests the example server server.py
+        """
 
-        return jsonify({"success": success, "filter": filter_name, "error": error})
+        reader, writer = await asyncio.open_connection("127.0.0.1", 5503)
+        writer.write(b"getFilter\n")
+        await writer.drain()
+        received = await reader.readline()
+        writer.close()
+        await writer.wait_closed()
 
-    @app.route("/setFilterWheel", methods=["POST"])
-    async def route_set_filter_wheel():
-        """Moves the filter wheel to a given position by filter name."""
-
-        payload = dict(
-            message="",
-            success=False,
-            error="",
-        )
-
-        if request.method == "POST":
-            req = request.get_json(force=True)
-        else:
-            payload["error"] = "Invalid request method."
-            return jsonify(payload)
-
-        if "filter" not in req:
-            payload["error"] = "Filter not found in request."
-            return jsonify(payload)
-
-        filter = req["filter"]
-        if filter not in FILTER_DICT:
-            payload["error"] = f"Unknown filter {filter}."
-            return jsonify(payload)
-
-        filter_num = FILTER_DICT[filter]
-        status, reply = await send_to_wheel(f"move {filter_num}")
-
-        payload["success"] = status
-        if status:
-            payload["message"] = f"Filter wheel moved to filter {filter}."
-        else:
-            payload["error"] = reply
-
-        return jsonify(payload)
-
-    @app.route("/homeFilterWheel")
-    async def route_home_filter_wheel():
-        """Homes the filter wheel."""
-
-        payload = dict(
-            message="",
-            success=False,
-            error="",
-        )
-
-        status, reply = await send_to_wheel("home")
-        payload["success"] = status
-        if status:
-            payload["message"] = "Filter wheel has been homed."
-        else:
-            payload["error"] = reply
-        print(payload)
-        return jsonify(payload)
+        return {"message": received.decode()}
 
     return app
 
 
 def OnExitApp():
+    andor.coolerOff()
     andor.shutdown()
 
 
@@ -412,4 +359,4 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=3000, debug=True)
+    app.run(host="127.0.0.1", port=3000)
