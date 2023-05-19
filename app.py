@@ -35,10 +35,14 @@ else:
 
 logging.getLogger("PIL").setLevel(logging.WARNING)
 
+<<<<<<< HEAD
+DEFAULT_PATH = "\\data\\ecam"
+=======
 FILTER_DICT = {"Home": 0, "Ha": 1, "B": 2, "V": 3, "g": 4, "r": 5}
 FILTER_DICT_REVERSE = {0: "Home", 1: "Ha", 2: "B", 3: "V", 4: "g", 5: "r"}
 
 DEFAULT_PATH = "/data/ecam"
+>>>>>>> main
 
 
 def getFilePath(file):
@@ -79,7 +83,7 @@ def getFilePath(file):
     # ensure nothing gets overwritten
     num = 0
     length = len(file[0:-5])
-    while os.path.isfile(f"{DEFAULT_PATH}/{file}"):
+    while os.path.isfile(f"{DEFAULT_PATH}\\{file}"):
         file = file[0:length] + f"({num})" + file[-5:]
         num += 1
 
@@ -258,22 +262,23 @@ def create_app(test_config=None):
 
             # handle exposure type
             # refer to pg 41 - 45 of sdk for acquisition mode info
-            if req["exptype"] == "Single":
+            exptype = req["exptype"]
+            if exptype == "Single":
                 andor.setAcquisitionMode(1)
                 andor.setExposureTime(float(req["exptime"]))
 
-            elif req["exptype"] == "Real Time":
+            elif exptype == "Real Time":
                 # this uses "run till abort" mode - how do we abort it?
                 andor.setAcquisitionMode(5)
                 andor.setExposureTime(0.3)
                 andor.setKineticCycleTime(0)
 
-            elif req["exptype"] == "Series":
+            elif exptype == "Series":
                 andor.setAcquisitionMode(3)
                 andor.setNumberKinetics(int(req["expnum"]))
                 andor.setExposureTime(float(req["exptime"]))
 
-            file_name = getFilePath(None)
+            file_name = f"{DEFAULT_PATH}\\temp.fits" if exptype == "Real Time" else getFilePath(None)
 
             date_obs = Time.now()
 
@@ -313,7 +318,10 @@ def create_app(test_config=None):
                     str(f"{andor.getStatusTEC()['temperature']:.2f}"),
                     "CCD Temperature during Exposure",
                 )
-                hdu.writeto(file_name, overwrite=True)
+                try:
+                    hdu.writeto(file_name, overwrite=True)
+                except:
+                    print("Failed to write")
 
                 return {
                     "filename": os.path.basename(file_name),
