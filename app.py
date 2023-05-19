@@ -35,7 +35,14 @@ else:
 
 logging.getLogger("PIL").setLevel(logging.WARNING)
 
+<<<<<<< HEAD
 DEFAULT_PATH = "\\data\\ecam"
+=======
+FILTER_DICT = {"Home": 0, "Ha": 1, "B": 2, "V": 3, "g": 4, "r": 5}
+FILTER_DICT_REVERSE = {0: "Home", 1: "Ha", 2: "B", 3: "V", 4: "g", 5: "r"}
+
+DEFAULT_PATH = "/data/ecam"
+>>>>>>> main
 
 
 def getFilePath(file):
@@ -81,6 +88,43 @@ def getFilePath(file):
         num += 1
 
     return os.path.join(path, file)
+
+
+async def send_to_wheel(command: str):
+    """Sends a command to the filter wheel and parses the reply.
+
+    Parameters
+    ----------
+    command
+        The string to send to the filter wheel server.
+
+    Returns
+    -------
+    res
+        A tuple of response status as a boolean, and the additional reply
+        as a string (the reply string will be empty if no additional reply is
+        provided).
+
+    """
+
+    reader, writer = await asyncio.open_connection("127.0.0.1", 9999)
+    writer.write((command + "\n").encode())
+    await writer.drain()
+
+    received = (await reader.readline()).decode()
+    writer.close()
+    await writer.wait_closed()
+
+    parts = received.split(",")
+
+    status = parts[0] == "OK"
+
+    if len(parts) > 1:
+        reply = parts[1]
+    else:
+        reply = ""
+
+    return status, reply
 
 
 def create_app(test_config=None):
@@ -162,63 +206,6 @@ def create_app(test_config=None):
     # @app.route('/getStatusTEC')
     # def route_getStatusTEC():
     #     return str(andor.getStatusTEC()['status'])
-
-    @app.route("/get_filter_position")
-    def route_get_filter():
-        pass
-
-    #    @app.route('/setFilter')
-    #    async def route_set_filter():
-    #        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    #        req = request.get_json(force=True)
-    #        s.connect(('127.0.0.1', 5503))
-    #        #if req['value']
-    #        s.send(b'home\n')
-    #        received = await s.recv(1000).decode()
-    #        s.close()
-    #        return received
-
-    def set_filter(filter):
-        res = asyncio.run(set_filter_helper(filter))
-        return res
-
-    async def set_filter_helper(filter):
-        # these filter positions are placeholders - need to find which filter
-        #   corresponds
-        # to each position on the wheel
-        """
-        Moves the filter to the given position.
-        """
-
-        filter_dict = {"Ha": 1, "B": 2, "V": 3, "g": 4, "r": 5}
-
-        if filter not in filter_dict.keys():
-            raise ValueError("Invalid Filter")
-
-        pos_str = f"move {filter_dict[filter]}\n"
-        reader, writer = await asyncio.open_connection("127.0.0.1", 5503)
-        writer.write(pos_str.encode("utf-8"))
-        await writer.drain()
-        received = await reader.readline()
-        writer.close()
-        await writer.wait_closed()
-        return {"message": received.decode()}
-
-    def home_filter():
-        res = asyncio.run(home_filter_helper())
-        return res
-
-    async def home_filter_helper():
-        """
-        Homes the filter back to its default position.
-        """
-        reader, writer = await asyncio.open_connection("127.0.0.1", 5503)
-        writer.write(b"home\n")
-        await writer.drain()
-        received = await reader.readline()
-        writer.close()
-        await writer.wait_closed()
-        return {"message": received.decode()}
 
     @app.route("/testReturnFITS", methods=["GET"])
     def route_testReturnFITS():
@@ -347,29 +334,78 @@ def create_app(test_config=None):
                 # home_filter()  # uncomment if using filter wheel
                 return {"message": str("Capture Unsuccessful")}
 
-    # we shouldn't download files locally - instead, lets upload them to server instead
-    # def send_file(file_name):
-    #   uploads = os.path.join(current_app.root_path, './fits_files/')
-    #   return send_from_directory(uploads, file_name, as_attachment=True)
+    @app.route("/getFilterWheel")
+    async def route_get_filter_wheel():
+        """Returns the position of the filter wheel."""
 
-    @app.route("/fw_test")
-    def route_fw_test_helper():
-        res = asyncio.run(route_fw_test())
-        return res
+        status, reply = await send_to_wheel("get")
+        filter_name = None
+        error = ""
 
-    async def route_fw_test():
-        """
-        Tests the example server server.py
-        """
+        if status:
+            success = True
+            filter_pos = int(reply)
+            filter_name = FILTER_DICT_REVERSE[filter_pos]
+        else:
+            success = False
+            error = reply
 
-        reader, writer = await asyncio.open_connection("127.0.0.1", 5503)
-        writer.write(b"getFilter\n")
-        await writer.drain()
-        received = await reader.readline()
-        writer.close()
-        await writer.wait_closed()
+        return jsonify({"success": success, "filter": filter_name, "error": error})
 
-        return {"message": received.decode()}
+    @app.route("/setFilterWheel", methods=["POST"])
+    async def route_set_filter_wheel():
+        """Moves the filter wheel to a given position by filter name."""
+
+        payload = dict(
+            message="",
+            success=False,
+            error="",
+        )
+
+        if request.method == "POST":
+            req = request.get_json(force=True)
+        else:
+            payload["error"] = "Invalid request method."
+            return jsonify(payload)
+
+        if "filter" not in req:
+            payload["error"] = "Filter not found in request."
+            return jsonify(payload)
+
+        filter = req["filter"]
+        if filter not in FILTER_DICT:
+            payload["error"] = f"Unknown filter {filter}."
+            return jsonify(payload)
+
+        filter_num = FILTER_DICT[filter]
+        status, reply = await send_to_wheel(f"move {filter_num}")
+
+        payload["success"] = status
+        if status:
+            payload["message"] = f"Filter wheel moved to filter {filter}."
+        else:
+            payload["error"] = reply
+
+        return jsonify(payload)
+
+    @app.route("/homeFilterWheel")
+    async def route_home_filter_wheel():
+        """Homes the filter wheel."""
+
+        payload = dict(
+            message="",
+            success=False,
+            error="",
+        )
+
+        status, reply = await send_to_wheel("home")
+        payload["success"] = status
+        if status:
+            payload["message"] = "Filter wheel has been homed."
+        else:
+            payload["error"] = reply
+        print(payload)
+        return jsonify(payload)
 
     return app
 

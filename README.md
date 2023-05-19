@@ -84,13 +84,13 @@ sudo apt install nginx
 and adjust the firewall to open the desired ports. Then start `nginx` with
 
 ```console
-sudo systemd enable --now nginx
+sudo systemctl enable --now nginx
 ```
 
-We'll now add a new site for Evora. Create a new file `/etc/nginx/sites-available/evora.conf` with
+We'll now add a new site for Evora. Create a new file `/etc/nginx/sites-enabled/evora.conf` with
 
 ```console
-sudo vim /etc/nginx/sites-available/evora.conf
+sudo vim /etc/nginx/sites-enabled/evora.conf
 ```
 
 and include the configuration
