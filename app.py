@@ -35,8 +35,8 @@ else:
 
 logging.getLogger("PIL").setLevel(logging.WARNING)
 
-FILTER_DICT = {"Ha": 0, "B": 1, "V": 2, "g": 3, "r": 4}
-FILTER_DICT_REVERSE = {0: "Ha", 1: "B", 2: "V", 3: "g", 4: "r"}
+FILTER_DICT = {"Ha": 0, "B": 1, "V": 2, "g": 3, "r": 4, "i": 5}
+FILTER_DICT_REVERSE = {0: "Ha", 1: "B", 2: "V", 3: "g", 4: "r", 5: "i"}
 
 DEFAULT_PATH = "/data/ecam"
 
