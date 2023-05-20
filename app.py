@@ -79,7 +79,7 @@ def getFilePath(file):
     # ensure nothing gets overwritten
     num = 0
     length = len(file[0:-5])
-    while os.path.isfile(f"{DEFAULT_PATH}\\{file}"):
+    while os.path.isfile(f"{DEFAULT_PATH}/{file}"):
         file = file[0:length] + f"({num})" + file[-5:]
         num += 1
 
@@ -265,9 +265,10 @@ def create_app(test_config=None):
 
             elif exptype == "Real Time":
                 # this uses "run till abort" mode - how do we abort it?
-                andor.setAcquisitionMode(5)
-                andor.setExposureTime(0.3)
-                andor.setKineticCycleTime(0)
+                andor.setAcquisitionMode(1)
+                andor.setExposureTime(1)
+                # andor.setKineticCycleTime(0)
+                req["exptime"] = 1
 
             elif exptype == "Series":
                 andor.setAcquisitionMode(3)
@@ -275,7 +276,7 @@ def create_app(test_config=None):
                 andor.setExposureTime(float(req["exptime"]))
 
             file_name = (
-                f"{DEFAULT_PATH}\\temp.fits"
+                f"{DEFAULT_PATH}/temp.fits"
                 if exptype == "Real Time"
                 else getFilePath(None)
             )
