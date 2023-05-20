@@ -164,8 +164,7 @@ def create_app(test_config=None):
         while andor.getStatusTEC()["temperature"] < -10:
             print("waiting to warm: ", andor.getStatusTEC()["temperature"])
             time.sleep(5)
-        andor.setFanMode(2)
-        time.sleep(2)
+        # We assume the fan should always be on. Testing to turn it off did not work.
         status = andor.shutdown()
         return {"status": status}
 
