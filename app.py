@@ -161,8 +161,11 @@ def create_app(test_config=None):
     @app.route("/shutdown")
     def route_shutdown():
         deactivateCooling()  # same here
+        while andor.getStatusTEC()["temperature"] < -10:
+            print("waiting to warm: ", andor.getStatusTEC()["temperature"])
+            time.sleep(5)
         status = andor.shutdown()
-        return status
+        return {"status": status}
 
     @app.route("/getTemperature")
     def route_getTemperature():
@@ -434,4 +437,6 @@ app = create_app()
 
 
 if __name__ == "__main__":
+    # FOR DEBUGGING, USE:
+    # app.run(host="127.0.0.1", port=8000, debug=True, processes=1, threaded=False)
     app.run(host="127.0.0.1", port=3000, debug=True)
