@@ -19,7 +19,7 @@ from flask import (
     send_from_directory,
 )
 
-from andor_routines import acquisition, activateCooling, startup
+from andor_routines import acquisition, activateCooling, startup, deactivateCooling
 from debug import DEBUGGING
 
 if DEBUGGING:
@@ -155,12 +155,12 @@ def create_app(test_config=None):
     @app.route("/initialize")
     def route_initialize():
         status = startup()
-        activateCooling() # make this a part of a separate route later
+        activateCooling()  # make this a part of a separate route later
         return status
 
     @app.route("/shutdown")
     def route_shutdown():
-        deactivateCooling() # same here
+        deactivateCooling()  # same here
         status = andor.shutdown()
         return status
 
