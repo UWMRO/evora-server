@@ -138,10 +138,10 @@ def create_app(test_config=None):
         # load the test config if passed in
         app.config.from_mapping(test_config)
 
-    status = startup()
-    activateCooling()
+    # status = startup()
+    # activateCooling()
 
-    app.logger.info(f"Startup Status: {str(status['status'])}")
+    # app.logger.info(f"Startup Status: {str(status['status'])}")
 
     @app.route("/getStatus")
     def getStatus():
@@ -151,6 +151,18 @@ def create_app(test_config=None):
     def index():
         tempData = andor.getStatusTEC()["temperature"]
         return render_template("index.html", tempData=tempData)
+
+    @app.route("/initialize")
+    def route_initialize():
+        status = startup()
+        activateCooling() # make this a part of a separate route later
+        return status
+
+    @app.route("/shutdown")
+    def route_shutdown():
+        deactivateCooling() # same here
+        status = andor.shutdown()
+        return status
 
     @app.route("/getTemperature")
     def route_getTemperature():
