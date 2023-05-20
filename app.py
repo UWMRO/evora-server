@@ -103,7 +103,7 @@ async def send_to_wheel(command: str):
 
     """
 
-    reader, writer = await asyncio.open_connection("127.0.0.1", 9999)
+    reader, writer = await asyncio.open_connection("72.233.250.84", 9999)
     writer.write((command + "\n").encode())
     await writer.drain()
 
