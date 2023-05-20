@@ -249,7 +249,8 @@ def create_app(test_config=None):
             #     app.logger.info(filter_msg)
 
             # handle img type
-            if req["imgtype"] == "bias":
+            if req["imgtype"] == "Bias" or req["imgtype"] == "Dark":
+                # Keep shutter closed during biases and darks
                 andor.setShutter(1, 2, 50, 50)
                 andor.setImage(1, 1, 1, dim[0], 1, dim[1])
             else:
