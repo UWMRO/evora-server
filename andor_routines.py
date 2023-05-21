@@ -1,5 +1,6 @@
 from debug import DEBUGGING
-if (DEBUGGING):
+
+if DEBUGGING:
     from evora.dummy import Dummy as andor
 else:
     import evora.andor as andor

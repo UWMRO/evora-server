@@ -19,7 +19,7 @@ from flask import (
     send_from_directory,
 )
 
-from andor_routines import acquisition, activateCooling, startup
+from andor_routines import acquisition, activateCooling, startup, deactivateCooling
 from debug import DEBUGGING
 
 if DEBUGGING:
@@ -35,8 +35,8 @@ else:
 
 logging.getLogger("PIL").setLevel(logging.WARNING)
 
-FILTER_DICT = {"Home": 0, "Ha": 1, "B": 2, "V": 3, "g": 4, "r": 5}
-FILTER_DICT_REVERSE = {0: "Home", 1: "Ha", 2: "B", 3: "V", 4: "g", 5: "r"}
+FILTER_DICT = {"Ha": 0, "B": 1, "V": 2, "g": 3, "r": 4, "i": 5}
+FILTER_DICT_REVERSE = {0: "Ha", 1: "B", 2: "V", 3: "g", 4: "r", 5: "i"}
 
 DEFAULT_PATH = "/data/ecam"
 
@@ -103,7 +103,7 @@ async def send_to_wheel(command: str):
 
     """
 
-    reader, writer = await asyncio.open_connection("127.0.0.1", 9999)
+    reader, writer = await asyncio.open_connection("72.233.250.84", 9999)
     writer.write((command + "\n").encode())
     await writer.drain()
 
@@ -138,10 +138,10 @@ def create_app(test_config=None):
         # load the test config if passed in
         app.config.from_mapping(test_config)
 
-    status = startup()
-    activateCooling()
+    # status = startup()
+    # activateCooling()
 
-    app.logger.info(f"Startup Status: {str(status['status'])}")
+    # app.logger.info(f"Startup Status: {str(status['status'])}")
 
     @app.route("/getStatus")
     def getStatus():
@@ -151,6 +151,22 @@ def create_app(test_config=None):
     def index():
         tempData = andor.getStatusTEC()["temperature"]
         return render_template("index.html", tempData=tempData)
+
+    @app.route("/initialize")
+    def route_initialize():
+        status = startup()
+        activateCooling()  # make this a part of a separate route later
+        return status
+
+    @app.route("/shutdown")
+    def route_shutdown():
+        deactivateCooling()  # same here
+        while andor.getStatusTEC()["temperature"] < -10:
+            print("waiting to warm: ", andor.getStatusTEC()["temperature"])
+            time.sleep(5)
+        # We assume the fan should always be on. Testing to turn it off did not work.
+        status = andor.shutdown()
+        return {"status": status}
 
     @app.route("/getTemperature")
     def route_getTemperature():
@@ -249,7 +265,8 @@ def create_app(test_config=None):
             #     app.logger.info(filter_msg)
 
             # handle img type
-            if req["imgtype"] == "bias":
+            if req["imgtype"] == "Bias" or req["imgtype"] == "Dark":
+                # Keep shutter closed during biases and darks
                 andor.setShutter(1, 2, 50, 50)
                 andor.setImage(1, 1, 1, dim[0], 1, dim[1])
             else:
@@ -258,22 +275,28 @@ def create_app(test_config=None):
 
             # handle exposure type
             # refer to pg 41 - 45 of sdk for acquisition mode info
-            if req["exptype"] == "Single":
+            exptype = req["exptype"]
+            if exptype == "Single":
                 andor.setAcquisitionMode(1)
                 andor.setExposureTime(float(req["exptime"]))
 
-            elif req["exptype"] == "Real Time":
+            elif exptype == "Real Time":
                 # this uses "run till abort" mode - how do we abort it?
-                andor.setAcquisitionMode(5)
-                andor.setExposureTime(0.3)
-                andor.setKineticCycleTime(0)
+                andor.setAcquisitionMode(1)
+                andor.setExposureTime(1)
+                # andor.setKineticCycleTime(0)
+                req["exptime"] = 1
 
-            elif req["exptype"] == "Series":
+            elif exptype == "Series":
                 andor.setAcquisitionMode(3)
                 andor.setNumberKinetics(int(req["expnum"]))
                 andor.setExposureTime(float(req["exptime"]))
 
-            file_name = getFilePath(None)
+            file_name = (
+                f"{DEFAULT_PATH}/temp.fits"
+                if exptype == "Real Time"
+                else getFilePath(None)
+            )
 
             date_obs = Time.now()
 
@@ -313,7 +336,10 @@ def create_app(test_config=None):
                     str(f"{andor.getStatusTEC()['temperature']:.2f}"),
                     "CCD Temperature during Exposure",
                 )
-                hdu.writeto(file_name, overwrite=True)
+                try:
+                    hdu.writeto(file_name, overwrite=True)
+                except:
+                    print("Failed to write")
 
                 return {
                     "filename": os.path.basename(file_name),
@@ -412,4 +438,6 @@ app = create_app()
 
 
 if __name__ == "__main__":
+    # FOR DEBUGGING, USE:
+    # app.run(host="127.0.0.1", port=8000, debug=True, processes=1, threaded=False)
     app.run(host="127.0.0.1", port=3000, debug=True)
