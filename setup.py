@@ -1,6 +1,5 @@
 import os
 import sys
-from distutils import sysconfig
 from distutils.core import Extension
 
 from setuptools import find_packages, setup
@@ -24,15 +23,11 @@ class getPybindInclude(object):
 
 
 extra_compile_args = ["--std=c++11", "-fPIC", "-v", "-O3", "-shared"]
-extra_link_args = []
+extra_link_args = ["-rpath,."]
 includes = [getPybindInclude(), getPybindInclude(user=True)]
 
-print(sys.platform)
 if sys.platform == "darwin":
-    extra_compile_args += ["-stdlib=libc++", "-mmacosx-version-min=10.9"]
-    extra_link_args += ["-v", "-mmacosx-version-min=10.9"]
-    vars = sysconfig.get_config_vars()
-    vars["LDSHARED"] = vars["LDSHARED"].replace("-bundle", "-dynamiclib")
+    raise OSError("macOS is not supported.")
 
 
 root_path = os.path.dirname(__file__)
