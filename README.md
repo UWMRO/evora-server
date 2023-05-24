@@ -129,3 +129,7 @@ sudo systemctl restart nginx
 ```
 
 and test that it works by navigating to [http://localhost/api/getTemperature](http://localhost/api/getTemperature).
+
+## References
+
+- [Andor SDK documentation](https://neurophysics.ucsd.edu/Manuals/Andor%20Technology/Andor_Software_Development_Kit.pdf)
