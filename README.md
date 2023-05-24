@@ -47,10 +47,12 @@ If `/data/ecam` does not exist, create it with `mkdir -p` and make sure it has t
 The recommended way to deploy `evora-server` is behind a [gunicorn](https://gunicorn.org) web server. To run the Flask webapp from `gunicorn`, execute
 
 ```console
-gunicorn -w 4 'app:app'
+gunicorn -w 1 'app:app'
 ```
 
-which will spin a web server with four workers. To run this command in the background as a systemd service, create a file `/etc/systemd/system/evora-server.service` with the contents
+which will spin a web server with one worker. Currently the app is limited to run with one single worker since the connection to the camera cannot be shared.
+
+To run this command in the background as a systemd service, create a file `/etc/systemd/system/evora-server.service` with the contents
 
 ```ini
 [Unit]
@@ -97,7 +99,8 @@ and include the configuration
 
 ```nginx
 server {
-    listen 9900;
+    listen 80;
+    listen [::]:80;
     server_name localhost;
     access_log  /usr/local/var/log/nginx/evora.log;
 
@@ -105,15 +108,24 @@ server {
         proxy_pass http://127.0.0.1:8000/;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_connect_timeout 75s;
+        proxy_read_timeout 1800s;
+    }
+
+    location /data {
+       alias /data;
+        autoindex on;
+        index index.html index.php;
     }
 }
-
 ```
 
-This configuration creates a server running on port `9900` and adds a reverse proxy to where `gunicorn` is running the Flask webapp. After this, restart `nginx` with
+This configuration creates a server running on port `80` (the default HTTP) and adds a reverse proxy to where `gunicorn` is running the Flask webapp. Note that we allow requests to the API to take as much as 30 minutes (which should be enough for most exposure times). It also creates a route to expose and browse `/data`.
+
+After this, restart `nginx` with
 
 ```console
 sudo systemctl restart nginx
 ```
 
-and test that it works by navigating to [http://localhost:9900/api/getTemperature](http://localhost:9900/api/getTemperature).
+and test that it works by navigating to [http://localhost/api/getTemperature](http://localhost/api/getTemperature).
