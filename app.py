@@ -319,7 +319,14 @@ def create_app(test_config=None):
                 hdu = fits.PrimaryHDU(img["data"])
                 hdu.header["DATE-OBS"] = date_obs.isot
                 hdu.header["COMMENT"] = req["comment"]
-                hdu.header["EXP_TIME"] = (
+                hdu.header["INSTRUME"] = "iKon-M 934 CCD DU934P-BEX2-DD"
+                hdu.header["XBINNING"] = "1"
+                hdu.header["YBINNING"] = "1"
+                hdu.header["XPIXSZ"] = "13"
+                hdu.header["YPIXSZ"] = "13"
+                hdu.header["FOCALLEN"] = "5766"
+
+                hdu.header["EXPTIME"] = (
                     float(req["exptime"]),
                     "Exposure Time (Seconds)",
                 )
@@ -327,12 +334,12 @@ def create_app(test_config=None):
                     str(req["exptype"]),
                     "Exposure Type (Single, Real Time, or Series)",
                 )
-                hdu.header["IMG_TYPE"] = (
+                hdu.header["IMAGETYP"] = (
                     str(req["imgtype"]),
                     "Image Type (Bias, Flat, Dark, or Object)",
                 )
                 hdu.header["FILTER"] = (str(req["filtype"]), "Filter (Ha, B, V, g, r)")
-                hdu.header["TEMP"] = (
+                hdu.header["CCD-TEMP"] = (
                     str(f"{andor.getStatusTEC()['temperature']:.2f}"),
                     "CCD Temperature during Exposure",
                 )
