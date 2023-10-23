@@ -1,13 +1,14 @@
 import asyncio
 import atexit
-from glob import glob
 import json
 import logging
 import os
 import re
 import time
 from datetime import datetime
+from glob import glob
 
+import numpy
 from astropy.io import fits
 from astropy.time import Time
 from flask import (
@@ -19,7 +20,7 @@ from flask import (
     send_from_directory,
 )
 
-from andor_routines import acquisition, activateCooling, startup, deactivateCooling
+from andor_routines import acquisition, activateCooling, deactivateCooling, startup
 from debug import DEBUGGING
 
 if DEBUGGING:
@@ -223,7 +224,7 @@ def create_app(test_config=None):
     def route_testReturnFITS():
         acq = acquisition((1024, 1024), exposure_time=0.1)
 
-        hdu = fits.PrimaryHDU(data=acq["data"])
+        hdu = fits.PrimaryHDU(data=acq["data"].astype(numpy.uint16))
         filename = f'{datetime.now().strftime("%m-%d-%Y_T%H%M%S")}.fits'
         hdu.writeto("./fits_files/" + filename)
 
@@ -316,7 +317,7 @@ def create_app(test_config=None):
                 # use astropy here to write a fits file
                 andor.setShutter(1, 0, 50, 50)  # closes shutter
                 # home_filter() # uncomment if using filter wheel
-                hdu = fits.PrimaryHDU(img["data"])
+                hdu = fits.PrimaryHDU(img["data"].astype(numpy.uint16))
                 hdu.header["DATE-OBS"] = date_obs.isot
                 hdu.header["COMMENT"] = req["comment"]
                 hdu.header["EXP_TIME"] = (
