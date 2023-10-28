@@ -313,13 +313,21 @@ def create_app(test_config=None):
                 dim
             )  # TODO: throws an error here! gotta wait for acquisition
 
+            comment = req["comment"]
+
+            focus_match = re.match(r"^focus\s*[:=]\s*(-?[0-9\.]+)$", comment)
+            if focus_match is not None:
+                focus = float(focus_match.group(1))
+            else:
+                focus = ""
+
             if img["status"] == 20002:
                 # use astropy here to write a fits file
                 andor.setShutter(1, 0, 50, 50)  # closes shutter
                 # home_filter() # uncomment if using filter wheel
                 hdu = fits.PrimaryHDU(img["data"].astype(numpy.uint16))
                 hdu.header["DATE-OBS"] = date_obs.isot
-                hdu.header["COMMENT"] = req["comment"]
+                hdu.header["COMMENT"] = comment
                 hdu.header["INSTRUME"] = "iKon-M 934 CCD DU934P-BEX2-DD"
                 hdu.header["XBINNING"] = "1"
                 hdu.header["YBINNING"] = "1"
@@ -343,6 +351,10 @@ def create_app(test_config=None):
                 hdu.header["CCD-TEMP"] = (
                     str(f"{andor.getStatusTEC()['temperature']:.2f}"),
                     "CCD Temperature during Exposure",
+                )
+                hdu.header['FOCUS'] = (
+                    focus,
+                    "Relative focus position [microns]"
                 )
                 try:
                     hdu.writeto(file_name, overwrite=True)
