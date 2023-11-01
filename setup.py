@@ -46,7 +46,7 @@ ext_modules = [
         include_dirs=includes,
         extra_compile_args=extra_compile_args,
         extra_link_args=extra_link_args,
-        optional=False,
+        optional=True,
     )
 ]
 
