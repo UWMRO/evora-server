@@ -1,5 +1,6 @@
 import os
 import sys
+import warnings
 from distutils.core import Extension
 
 from setuptools import find_packages, setup
@@ -27,7 +28,10 @@ extra_link_args = ["-rpath,."]
 includes = [getPybindInclude(), getPybindInclude(user=True)]
 
 if sys.platform == "darwin":
-    raise OSError("macOS is not supported.")
+    warnings.warn(
+        "macOS is not supported. Compiling the module will likely fail.",
+        UserWarning,
+    )
 
 
 root_path = os.path.dirname(__file__)
