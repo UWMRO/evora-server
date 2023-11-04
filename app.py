@@ -458,6 +458,8 @@ atexit.register(OnExitApp)
 
 app = create_app()
 import focus_endpoints  # don't remove
+import framing_endpoints  # don't remove
+
 
 if __name__ == "__main__":
     # FOR DEBUGGING, USE:
