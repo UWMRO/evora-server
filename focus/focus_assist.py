@@ -1,5 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')  # turn off gui
+
 from astropy.io import fits
 import io
 import sep
