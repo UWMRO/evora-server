@@ -1,7 +1,6 @@
 import os
-import platform
 import sys
-from distutils import sysconfig
+import warnings
 from distutils.core import Extension
 
 from setuptools import find_packages, setup
@@ -24,30 +23,30 @@ class getPybindInclude(object):
         return pybind11.get_include(self.user)
 
 
-extra_compile_args = ["--std=c++11", "-fPIC", "-v", "-O3"]
-extra_link_args = []
+extra_compile_args = ["--std=c++11", "-fPIC", "-v", "-O3", "-shared"]
+extra_link_args = ["-rpath,."]
 includes = [getPybindInclude(), getPybindInclude(user=True)]
 
-
 if sys.platform == "darwin":
-    extra_compile_args += ["-stdlib=libc++", "-mmacosx-version-min=10.9"]
-    extra_link_args = ["-v", "-mmacosx-version-min=10.9"]
-    vars = sysconfig.get_config_vars()
-    vars["LDSHARED"] = vars["LDSHARED"].replace("-bundle", "-dynamiclib")
+    warnings.warn(
+        "macOS is not supported. Compiling the module will likely fail.",
+        UserWarning,
+    )
 
 
 root_path = os.path.dirname(__file__)
-LIBANDOR_PATH = root_path + "/evora/andor_wrapper.cpp"
+ANDOR_WRAPPER_PATH = root_path + "/evora/andor_wrapper.cpp"
 
 
 ext_modules = [
     Extension(
-        "evora.libandor_wrapper",
-        sources=[LIBANDOR_PATH],
+        "evora.andor_wrapper",
+        sources=[ANDOR_WRAPPER_PATH],
+        libraries=["andor"],
         include_dirs=includes,
         extra_compile_args=extra_compile_args,
         extra_link_args=extra_link_args,
-        optional=False,
+        optional=True,
     )
 ]
 

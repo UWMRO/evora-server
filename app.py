@@ -1,13 +1,14 @@
 import asyncio
 import atexit
-from glob import glob
 import json
 import logging
 import os
 import re
 import time
 from datetime import datetime
+from glob import glob
 
+import numpy
 from astropy.io import fits
 from astropy.time import Time
 from flask import (
@@ -19,7 +20,7 @@ from flask import (
     send_from_directory,
 )
 
-from andor_routines import acquisition, activateCooling, startup, deactivateCooling
+from andor_routines import acquisition, activateCooling, deactivateCooling, startup
 from debug import DEBUGGING
 
 if DEBUGGING:
@@ -225,7 +226,7 @@ def create_app(test_config=None):
     def route_testReturnFITS():
         acq = acquisition((1024, 1024), exposure_time=0.1)
 
-        hdu = fits.PrimaryHDU(data=acq["data"])
+        hdu = fits.PrimaryHDU(data=acq["data"].astype(numpy.uint16))
         filename = f'{datetime.now().strftime("%m-%d-%Y_T%H%M%S")}.fits'
         hdu.writeto("./fits_files/" + filename)
 
@@ -314,14 +315,29 @@ def create_app(test_config=None):
                 dim
             )  # TODO: throws an error here! gotta wait for acquisition
 
+            comment = req["comment"]
+
+            focus_match = re.match(r"^focus\s*[:=]\s*(-?[0-9\.]+)$", comment)
+            if focus_match is not None:
+                focus = float(focus_match.group(1))
+            else:
+                focus = ""
+
             if img["status"] == 20002:
                 # use astropy here to write a fits file
                 andor.setShutter(1, 0, 50, 50)  # closes shutter
                 # home_filter() # uncomment if using filter wheel
-                hdu = fits.PrimaryHDU(img["data"])
+                hdu = fits.PrimaryHDU(img["data"].astype(numpy.uint16))
                 hdu.header["DATE-OBS"] = date_obs.isot
-                hdu.header["COMMENT"] = req["comment"]
-                hdu.header["EXP_TIME"] = (
+                hdu.header["COMMENT"] = comment
+                hdu.header["INSTRUME"] = "iKon-M 934 CCD DU934P-BEX2-DD"
+                hdu.header["XBINNING"] = "1"
+                hdu.header["YBINNING"] = "1"
+                hdu.header["XPIXSZ"] = "13"
+                hdu.header["YPIXSZ"] = "13"
+                hdu.header["FOCALLEN"] = "5766"
+
+                hdu.header["EXPTIME"] = (
                     float(req["exptime"]),
                     "Exposure Time (Seconds)",
                 )
@@ -329,14 +345,18 @@ def create_app(test_config=None):
                     str(req["exptype"]),
                     "Exposure Type (Single, Real Time, or Series)",
                 )
-                hdu.header["IMG_TYPE"] = (
+                hdu.header["IMAGETYP"] = (
                     str(req["imgtype"]),
                     "Image Type (Bias, Flat, Dark, or Object)",
                 )
                 hdu.header["FILTER"] = (str(req["filtype"]), "Filter (Ha, B, V, g, r)")
-                hdu.header["TEMP"] = (
+                hdu.header["CCD-TEMP"] = (
                     str(f"{andor.getStatusTEC()['temperature']:.2f}"),
                     "CCD Temperature during Exposure",
+                )
+                hdu.header['FOCUS'] = (
+                    focus,
+                    "Relative focus position [microns]"
                 )
                 try:
                     hdu.writeto(file_name, overwrite=True)
