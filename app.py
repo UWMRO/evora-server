@@ -41,6 +41,8 @@ FILTER_DICT_REVERSE = {0: "Ha", 1: "B", 2: "V", 3: "g", 4: "r", 5: "i"}
 
 DEFAULT_PATH = "/data/ecam"
 
+DUMMY_FILTER_POSITION = 0
+
 
 def getFilePath(file):
     """
@@ -375,7 +377,9 @@ def create_app(test_config=None):
     @app.route("/getFilterWheel")
     async def route_get_filter_wheel():
         """Returns the position of the filter wheel."""
-
+        if DEBUGGING:
+            return jsonify({"success": True, "filter": FILTER_DICT_REVERSE[DUMMY_FILTER_POSITION], "error": ""})
+        
         status, reply = await send_to_wheel("get")
         filter_name = None
         error = ""
@@ -393,6 +397,8 @@ def create_app(test_config=None):
     @app.route("/setFilterWheel", methods=["POST"])
     async def route_set_filter_wheel():
         """Moves the filter wheel to a given position by filter name."""
+
+        global DUMMY_FILTER_POSITION
 
         payload = dict(
             message="",
@@ -416,6 +422,13 @@ def create_app(test_config=None):
             return jsonify(payload)
 
         filter_num = FILTER_DICT[filter]
+
+        if DEBUGGING:
+            await asyncio.sleep(2)
+            DUMMY_FILTER_POSITION = filter_num
+            payload["success"] = True
+            return jsonify(payload)
+
         status, reply = await send_to_wheel(f"move {filter_num}")
 
         payload["success"] = status
@@ -429,6 +442,13 @@ def create_app(test_config=None):
     @app.route("/homeFilterWheel")
     async def route_home_filter_wheel():
         """Homes the filter wheel."""
+
+        global DUMMY_FILTER_POSITION
+
+        if DEBUGGING:
+            await asyncio.sleep(2)
+            DUMMY_FILTER_POSITION = 0
+            return dict(message="", success=True, error="")
 
         payload = dict(
             message="",
