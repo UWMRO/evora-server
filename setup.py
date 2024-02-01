@@ -23,8 +23,9 @@ class getPybindInclude(object):
         return pybind11.get_include(self.user)
 
 
-extra_compile_args = ["--std=c++11", "-fPIC", "-v", "-O3", "-shared"]
-extra_link_args = ["-rpath,."]
+extra_compile_args = ["--std=c++11", "-fPIC", "-v", "-O3", "-shared", "-Landor"]
+extra_link_args = ["-Wl,-rpath,."]
+
 includes = [getPybindInclude(), getPybindInclude(user=True)]
 
 if sys.platform == "darwin":
