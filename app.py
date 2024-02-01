@@ -240,7 +240,7 @@ def create_app(test_config=None):
         return str("Finished Acquiring after 10s")
 
     @app.route("/capture", methods=["POST"])
-    def route_capture():
+    async def route_capture():
         """
         Attempts to take a picture with the camera. Uses the 'POST' method
         to take in form requests from the front end.
@@ -310,7 +310,8 @@ def create_app(test_config=None):
                 status = andor.getStatus()
                 app.logger.info("Acquisition in progress")
 
-            time.sleep(float(req["exptime"]) + 0.5)
+            await asyncio.sleep(float(req["exptime"]) + 0.5)
+
             img = andor.getAcquiredData(
                 dim
             )  # TODO: throws an error here! gotta wait for acquisition
@@ -379,7 +380,7 @@ def create_app(test_config=None):
         """Returns the position of the filter wheel."""
         if DEBUGGING:
             return jsonify({"success": True, "filter": FILTER_DICT_REVERSE[DUMMY_FILTER_POSITION], "error": ""})
-        
+
         status, reply = await send_to_wheel("get")
         filter_name = None
         error = ""
