@@ -125,8 +125,6 @@ def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
 
-    # app.config['UPLOAD_FOLDER'] = 'static/fits_files'
-
     logging.basicConfig(level=logging.DEBUG)
 
     if test_config is None:
@@ -135,11 +133,6 @@ def create_app(test_config=None):
     else:
         # load the test config if passed in
         app.config.from_mapping(test_config)
-
-    # status = startup()
-    # activateCooling()
-
-    # app.logger.info(f'Startup Status: {str(status['status'])}')
 
     @app.route('/getStatus')
     def getStatus():
@@ -211,14 +204,6 @@ def create_app(test_config=None):
             status = andor.getStatus()
             if status == 20072:
                 return {'message': str('Acquisition already in progress.')}
-
-            # handle filter type - untested, uncomment if using filter wheel
-
-            # filter_msg = set_filter(req['fil_type'])
-            # if filter_msg['message'].startswith('Error'):
-            #     raise Exception(filter_msg)
-            # else:
-            #     app.logger.info(filter_msg)
 
             # handle img type
             if req['imgtype'] == 'Bias' or req['imgtype'] == 'Dark':
