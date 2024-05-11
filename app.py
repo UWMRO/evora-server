@@ -430,10 +430,13 @@ def OnExitApp():
 atexit.register(OnExitApp)
 
 app = create_app()
-import focus_endpoints  # don't remove
-from framing import register_framing_blueprints
 
+from framing import register_framing_blueprints
 register_framing_blueprints(app)
+
+from focus import register_focus_assist_blueprints
+register_focus_assist_blueprints(app)
+
 
 if __name__ == '__main__':
     # FOR DEBUGGING, USE:

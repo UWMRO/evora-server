@@ -1,3 +1,4 @@
+from typing import Dict
 from flask import Response
 from flask import Flask, jsonify, make_response, send_file
 from datetime import datetime, timedelta
@@ -12,10 +13,12 @@ from glob import glob
 import logging
 logging.basicConfig(level=logging.INFO)
 
-from app import app
+from flask import Blueprint
+
+blueprint = Blueprint('focus_assist', __name__)
 
 
-SessionStorage: {str: FocusSession} = {}
+SessionStorage: Dict[str: FocusSession] = {}
 
 
 def analyze(session):
@@ -37,7 +40,7 @@ def analyze(session):
     return fwhm_min, hfd_min
 
 
-@app.route('/plot/<sid>')
+@blueprint.route('/plot/<sid>')
 def retrieve_plot(sid):
     if sid not in SessionStorage:
         return Response(status=404)
@@ -56,7 +59,7 @@ def retrieve_plot(sid):
     return Response(image, mimetype='image/png')
 
 
-@app.route('/api/reset', methods=['POST'])
+@blueprint.route('/api/reset', methods=['POST'])
 def reset():
     payload = request.get_json()
     sid = payload['sid']
@@ -66,7 +69,7 @@ def reset():
     })
 
 
-@app.route('/api/add_focus_datapoint', methods=['POST'])
+@blueprint.route('/api/add_focus_datapoint', methods=['POST'])
 def add_focus_datapoint():
     clean_old_sessions()
     payload = request.get_json()
