@@ -455,8 +455,9 @@ def OnExitApp():
 atexit.register(OnExitApp)
 
 app = create_app()
-import framing_endpoints  # don't remove
+from framing import register_framing_blueprints
 
+register_framing_blueprints(app)
 
 if __name__ == "__main__":
     # FOR DEBUGGING, USE:
