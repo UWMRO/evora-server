@@ -78,13 +78,16 @@ def add_focus_datapoint():
         SessionStorage[sid] = FocusSession(id=sid)
     session = SessionStorage[sid]
 
-    filename = payload['filename']
+    filename: str = payload['filename']
     focuser_position = int(payload['focuserPosition'])
     session.focuser_positons.append(focuser_position)
 
     logging.info(f"filename: {filename} focuser_position: {focuser_position}")
 
-    fits_file_url = settings.BASEFILE_PATH + filename
+    if not filename.startswith("/"):
+        fits_file_url = settings.BASEFILE_PATH + filename
+    else:
+        fits_file_url = filename
 
     if settings.DEBUG:
         images = glob(
