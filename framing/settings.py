@@ -1,2 +1,2 @@
 MAX_SOURCES = 50
-CACHE_DIR = "/astrometry-index"
+CACHE_DIR = "/data/astrometry-index"
