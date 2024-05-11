@@ -1,5 +1,5 @@
 from flask import Blueprint
-from .endpoints import framing_bp
+from .endpoints import blueprint
 
 def register_framing_blueprints(app):
-    app.register_blueprint(framing_bp)
+    app.register_blueprint(blueprint)

@@ -12,9 +12,9 @@ from framing.models import PlateSolvingResult
 
 from flask import Blueprint
 
-framing_bp = Blueprint('framing', __name__)
+blueprint = Blueprint('framing', __name__)
 
-@framing_bp.route('/api/plate_solve', methods=['POST'])
+@blueprint.route('/api/plate_solve', methods=['POST'])
 def plate_solve():
     payload = request.get_json()
     file_path = payload['filename']
