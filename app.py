@@ -43,45 +43,49 @@ DEFAULT_PATH = '/data/ecam'
 
 DUMMY_FILTER_POSITION = 0
 
-def path_validation(filename : str):
-    '''
-    Input validation for the file name.
-    - The directory will be created if it does not exist
-    - '.fits' will be appended to the file name if it is not already present
-    - If the file name is empty, it will be saved as image.fits
-    - If the file name is invalid, it will be saved as image.fits
-    - If the file name already exists, it will be saved as image(0).fits
-        image(1).fits, image(2).fits, etc.
-    
-    Parameters
-    ----------
-    file : str
-        The file name to validate.
+def getFilePath(file):
+    """
+    Formats the given file name to be valid.
+    If the file contains invalid characters or is empty, image.fits will be used.
+    if the file already exists, it will be saved as:
+        name(0), name(1), name(2), ..., name(n)
+    """
 
-    Returns
-    -------
-    str
-        The validated file name appended to DEFAULT_PATH.
-    '''
-    invalid_characters = [':', '<', '>', '/', '\\', "'", '|', '?', '*']
-    timestamp = Time.now().utc.isot.split('T')[0].replace('-', '')
+    default_image_name = "ecam-{seq:04d}.fits"
 
-    os.makedirs(DEFAULT_PATH, exist_ok=True)
+    date = Time.now().utc.isot.split("T")[0].replace("-", "")
 
-    if len(filename) == 0 or any(c in filename for c in invalid_characters):
-        filename = f'ecam-{timestamp}.fits'
-    
-    if not (filename.endswith('.fits')):
-        filename += '.fits'
-        
-    no_extension = filename.split('.fits')[0]
-    if os.path.isfile(os.path.join(DEFAULT_PATH, filename)):
-        num = 0
-        while os.path.isfile(f'{no_extension}({num}).fits'):
-            num += 1
-        filename = f'image({num}).fits'
+    path = os.path.join(DEFAULT_PATH, date)
+    os.makedirs(path, exist_ok=True)
 
-    return os.path.join(DEFAULT_PATH, filename)
+    invalid_characters = [":", "<", ">", "/", "\\", '"', "|", "?", "*", ".."]
+    # if invalid filename, use image.fits
+    if file is None or file == "" or any(c in file for c in invalid_characters):
+        all_files = list(sorted(glob(os.path.join(path, "ecam-*.fits"))))
+        if len(all_files) == 0:
+            seq = 1
+        else:
+            match = re.search(r"ecam\-([0-9]+)", all_files[-1])
+            if match:
+                seq = int(match.group(1)) + 1
+            else:
+                seq = 1
+        file = default_image_name.format(seq=seq)
+
+    # ensure extension is .fits
+    if file[-1] == ".":
+        file += "fits"
+    if len(file) < 5 or file[-5:] != ".fits":
+        file += ".fits"
+
+    # ensure nothing gets overwritten
+    num = 0
+    length = len(file[0:-5])
+    while os.path.isfile(f"{DEFAULT_PATH}/{file}"):
+        file = file[0:length] + f"({num})" + file[-5:]
+        num += 1
+
+    return os.path.join(path, file)
 
 
 async def send_to_wheel(command: str):
@@ -251,7 +255,7 @@ def create_app(test_config=None):
             file_name = (
                 f'{DEFAULT_PATH}/temp.fits'
                 if exptype == 'Real Time'
-                else path_validation('')
+                else getFilePath(None)
             )
 
             date_obs = Time.now()
