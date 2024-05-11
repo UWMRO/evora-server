@@ -23,8 +23,9 @@ class getPybindInclude(object):
         return pybind11.get_include(self.user)
 
 
-extra_compile_args = ["--std=c++11", "-fPIC", "-v", "-O3", "-shared"]
-extra_link_args = ["-rpath,."]
+extra_compile_args = ["--std=c++11", "-fPIC", "-v", "-O3", "-shared", "-Landor"]
+extra_link_args = ["-Wl,-rpath,."]
+
 includes = [getPybindInclude(), getPybindInclude(user=True)]
 
 if sys.platform == "darwin":
@@ -57,7 +58,7 @@ setup(
     description="Package containing PyBind11 wrapper code for the Andor SDK.",
     author="Astronomy Undergraduate Engineering Group",
     setup_requires=["pybind11"],
-    install_requires=["numpy", "astropy>=4.0", "pillow", "flask", "gunicorn>=20.1.0"],
+    install_requires=["numpy", "astropy>=4.0", "pillow", "flask[async]", "gunicorn>=20.1.0"],
     packages=find_packages(exclude=("tests*")),
     ext_modules=ext_modules,
 )
