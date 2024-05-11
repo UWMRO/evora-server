@@ -202,7 +202,8 @@ def create_app(test_config=None):
 
         Returns the url for the fits file generated, which is then used for
         JS9's display.
-        Throws an error if status code is not 20002 (success).
+        filename, url, message, status
+        status: 0 - success, 1 - aborted, 2 - failed
         '''
 
         global ABORT_FLAG
@@ -217,7 +218,7 @@ def create_app(test_config=None):
             # check if acquisition is already in progress
             status = andor.getStatus()
             if status['status'] == 20072:
-                return {'message': str('Acquisition already in progress.')}
+                return {'message': str('Acquisition already in progress.'), 'status': 2}
 
             # handle img type
             if req['imgtype'] == 'Bias' or req['imgtype'] == 'Dark':
@@ -273,7 +274,7 @@ def create_app(test_config=None):
             
             if ABORT_FLAG:
                 andor.abortAcquisition()
-                return {'message': str('Capture aborted')}
+                return {'message': str('Capture aborted'), 'status': 1}
 
             img = andor.getAcquiredData(
                 dim
@@ -331,12 +332,13 @@ def create_app(test_config=None):
                     'filename': os.path.basename(file_name),
                     'url': file_name,
                     'message': 'Capture Successful',
+                    'status': 0
                 }
 
             else:
                 andor.setShutter(1, 0, 50, 50)
                 # home_filter()  # uncomment if using filter wheel
-                return {'message': str('Capture Unsuccessful')}
+                return {'message': str('Capture Unsuccessful'), 'status': 2}
 
     @app.route('/abort')
     async def route_abort_capture():
