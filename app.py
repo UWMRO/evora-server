@@ -253,7 +253,7 @@ def create_app(test_config=None):
             file_name = (
                 f'{DEFAULT_PATH}/temp.fits'
                 if exptype == 'Real Time'
-                else path_validation(req['filename'])
+                else path_validation('')
             )
 
             date_obs = Time.now()
@@ -431,6 +431,9 @@ atexit.register(OnExitApp)
 
 app = create_app()
 import focus_endpoints  # don't remove
+from framing import register_framing_blueprints
+
+register_framing_blueprints(app)
 
 if __name__ == '__main__':
     # FOR DEBUGGING, USE:
