@@ -263,9 +263,9 @@ def create_app(test_config=None):
             andor.startAcquisition()
             status = andor.getStatus()
             # todo: review parallelism, threading behavior is what we want?
-            while status == 20072:
-                status = andor.getStatus()
-                app.logger.info('Acquisition in progress')
+            # while status == 20072:
+            #     status = andor.getStatus()
+            #     app.logger.info('Acquisition in progress')
 
             await asyncio.sleep(float(req["exptime"]) + 0.5)
             img = andor.getAcquiredData(
