@@ -43,6 +43,8 @@ DEFAULT_PATH = '/data/ecam'
 
 DUMMY_FILTER_POSITION = 0
 
+ABORT_FLAG = False
+
 def getFilePath(file):
     """
     Formats the given file name to be valid.
@@ -206,6 +208,11 @@ def create_app(test_config=None):
         JS9's display.
         Throws an error if status code is not 20002 (success).
         '''
+
+        global ABORT_FLAG
+
+        ABORT_FLAG = False
+
         if request.method == 'POST':
             req = request.get_json(force=True)
             req = json.loads(req)
@@ -213,7 +220,7 @@ def create_app(test_config=None):
 
             # check if acquisition is already in progress
             status = andor.getStatus()
-            if status == 20072:
+            if status['status'] == 20072:
                 return {'message': str('Acquisition already in progress.')}
 
             # handle filter type - untested, uncomment if using filter wheel
@@ -267,7 +274,19 @@ def create_app(test_config=None):
             #     status = andor.getStatus()
             #     app.logger.info('Acquisition in progress')
 
-            await asyncio.sleep(float(req["exptime"]) + 0.5)
+            elapsed = 0.0
+            while True:
+                if ABORT_FLAG:
+                    break
+                await asyncio.sleep(0.1)
+                elapsed += 0.1
+                if elapsed >= float(req["exptime"]) + 0.5:
+                    break
+            
+            if ABORT_FLAG:
+                andor.abortAcquisition()
+                return {'message': str('Capture aborted')}
+
             img = andor.getAcquiredData(
                 dim
             )  # TODO: throws an error here! gotta wait for acquisition
@@ -330,6 +349,16 @@ def create_app(test_config=None):
                 andor.setShutter(1, 0, 50, 50)
                 # home_filter()  # uncomment if using filter wheel
                 return {'message': str('Capture Unsuccessful')}
+
+    @app.route('/abort')
+    async def route_abort_capture():
+        '''Abort exposure.'''
+
+        global ABORT_FLAG
+
+        ABORT_FLAG = True
+
+        return {'message': 'Aborting exposure'}
 
     @app.route('/getFilterWheel')
     async def route_get_filter_wheel():
@@ -438,5 +467,5 @@ register_framing_blueprints(app)
 
 if __name__ == '__main__':
     # FOR DEBUGGING, USE:
-    # app.run(host='127.0.0.1', port=8000, debug=True, processes=1, threaded=False)
-    app.run(host='127.0.0.1', port=3000, debug=True)
+    # app.run(host='127.0.0.1', port=8000, debug=True, processes=1)
+    app.run(host='127.0.0.1', port=3000, debug=True, processes=1)
