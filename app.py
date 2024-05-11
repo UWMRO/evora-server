@@ -461,9 +461,12 @@ def OnExitApp():
 atexit.register(OnExitApp)
 
 app = create_app()
-from framing import register_framing_blueprints
 
-register_framing_blueprints(app)
+# This does not work on windows (due to astrometry). For now we set it to only work when not DEBUGGING
+if not DEBUGGING:
+    from framing import register_framing_blueprints
+
+    register_framing_blueprints(app)
 
 if __name__ == '__main__':
     # FOR DEBUGGING, USE:
