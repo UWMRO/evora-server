@@ -59,7 +59,7 @@ def plot_sources(data, sources):
     fig = plt.figure(figsize=(10, 8))
     plt.imshow(data, cmap='Greys', origin='lower', norm=norm,
                interpolation='nearest')
-    apertures.plot(color='blue', lw=1.5, alpha=0.5);
+    apertures.plot(color='blue', lw=1.5, alpha=0.5)
     plt.show()
 
 
@@ -97,15 +97,15 @@ def visualize_solution(solution_match, w, h) -> str:
     return rtn
 
 
-def solve_fits(file_path) -> PlateSolvingResult:
+def solve_fits(file_path, position_hint=None) -> PlateSolvingResult:
     try:
         hdul = fits.open(file_path)
         data = hdul[0].data
         data = data.astype(np.float32)
 
         stars_xy = extract_sources(data)
-        # plot_sources(data, stars_xy)    
-        solution = solve(solver, stars_xy)
+        # plot_sources(data, stars_xy)   
+        solution = solve(solver, stars_xy, position_hint=position_hint)
         
         if not solution.has_match():
             logging.info("No match found.")
