@@ -28,69 +28,64 @@ if DEBUGGING:
 else:
     from evora import andor
 
-"""
+'''
  dev note: I also ran pip install aioflask and pip install asgiref to try to give
  flask async abilities.
  this is for handling requests from the filter wheel that may take some time.
-"""
+'''
 
-logging.getLogger("PIL").setLevel(logging.WARNING)
+logging.getLogger('PIL').setLevel(logging.WARNING)
 
-FILTER_DICT = {"Ha": 0, "B": 1, "V": 2, "g": 3, "r": 4, "i": 5}
-FILTER_DICT_REVERSE = {0: "Ha", 1: "B", 2: "V", 3: "g", 4: "r", 5: "i"}
+FILTER_DICT = {'Ha': 0, 'B': 1, 'V': 2, 'g': 3, 'r': 4, 'i': 5}
+FILTER_DICT_REVERSE = {0: 'Ha', 1: 'B', 2: 'V', 3: 'g', 4: 'r', 5: 'i'}
 
-DEFAULT_PATH = "/data/ecam"
+DEFAULT_PATH = '/data/ecam'
 
 DUMMY_FILTER_POSITION = 0
 
+def path_validation(filename : str):
+    '''
+    Input validation for the file name.
+    - The directory will be created if it does not exist
+    - '.fits' will be appended to the file name if it is not already present
+    - If the file name is empty, it will be saved as image.fits
+    - If the file name is invalid, it will be saved as image.fits
+    - If the file name already exists, it will be saved as image(0).fits
+        image(1).fits, image(2).fits, etc.
+    
+    Parameters
+    ----------
+    file : str
+        The file name to validate.
 
-def getFilePath(file):
-    """
-    Formats the given file name to be valid.
-    If the file contains invalid characters or is empty, image.fits will be used.
-    if the file already exists, it will be saved as:
-        name(0), name(1), name(2), ..., name(n)
-    """
+    Returns
+    -------
+    str
+        The validated file name appended to DEFAULT_PATH.
+    '''
+    invalid_characters = [':', '<', '>', '/', '\\', "'", '|', '?', '*']
+    timestamp = Time.now().utc.isot.split('T')[0].replace('-', '')
 
-    default_image_name = "ecam-{seq:04d}.fits"
+    os.makedirs(DEFAULT_PATH, exist_ok=True)
 
-    date = Time.now().utc.isot.split("T")[0].replace("-", "")
+    if len(filename) == 0 or any(c in filename for c in invalid_characters):
+        filename = f'ecam-{timestamp}.fits'
+    
+    if not (filename.endswith('.fits')):
+        filename += '.fits'
+        
+    no_extension = filename.split('.fits')[0]
+    if os.path.isfile(os.path.join(DEFAULT_PATH, filename)):
+        num = 0
+        while os.path.isfile(f'{no_extension}({num}).fits'):
+            num += 1
+        filename = f'image({num}).fits'
 
-    path = os.path.join(DEFAULT_PATH, date)
-    os.makedirs(path, exist_ok=True)
-
-    invalid_characters = [":", "<", ">", "/", "\\", '"', "|", "?", "*", ".."]
-    # if invalid filename, use image.fits
-    if file is None or file == "" or any(c in file for c in invalid_characters):
-        all_files = list(sorted(glob(os.path.join(path, "ecam-*.fits"))))
-        if len(all_files) == 0:
-            seq = 1
-        else:
-            match = re.search(r"ecam\-([0-9]+)", all_files[-1])
-            if match:
-                seq = int(match.group(1)) + 1
-            else:
-                seq = 1
-        file = default_image_name.format(seq=seq)
-
-    # ensure extension is .fits
-    if file[-1] == ".":
-        file += "fits"
-    if len(file) < 5 or file[-5:] != ".fits":
-        file += ".fits"
-
-    # ensure nothing gets overwritten
-    num = 0
-    length = len(file[0:-5])
-    while os.path.isfile(f"{DEFAULT_PATH}/{file}"):
-        file = file[0:length] + f"({num})" + file[-5:]
-        num += 1
-
-    return os.path.join(path, file)
+    return os.path.join(DEFAULT_PATH, filename)
 
 
 async def send_to_wheel(command: str):
-    """Sends a command to the filter wheel and parses the reply.
+    '''Sends a command to the filter wheel and parses the reply.
 
     Parameters
     ----------
@@ -104,24 +99,24 @@ async def send_to_wheel(command: str):
         as a string (the reply string will be empty if no additional reply is
         provided).
 
-    """
+    '''
 
-    reader, writer = await asyncio.open_connection("72.233.250.84", 9999)
-    writer.write((command + "\n").encode())
+    reader, writer = await asyncio.open_connection('72.233.250.84', 9999)
+    writer.write((command + '\n').encode())
     await writer.drain()
 
     received = (await reader.readline()).decode()
     writer.close()
     await writer.wait_closed()
 
-    parts = received.split(",")
+    parts = received.split(',')
 
-    status = parts[0] == "OK"
+    status = parts[0] == 'OK'
 
     if len(parts) > 1:
         reply = parts[1]
     else:
-        reply = ""
+        reply = ''
 
     return status, reply
 
@@ -136,7 +131,7 @@ def create_app(test_config=None):
 
     if test_config is None:
         # load the instance config, if it exists, when not testing
-        app.config.from_pyfile("config.py", silent=True)
+        app.config.from_pyfile('config.py', silent=True)
     else:
         # load the test config if passed in
         app.config.from_mapping(test_config)
@@ -144,120 +139,78 @@ def create_app(test_config=None):
     # status = startup()
     # activateCooling()
 
-    # app.logger.info(f"Startup Status: {str(status['status'])}")
+    # app.logger.info(f'Startup Status: {str(status['status'])}')
 
-    @app.route("/getStatus")
+    @app.route('/getStatus')
     def getStatus():
         return jsonify(andor.getStatus())
 
-    @app.route("/")
+    @app.route('/')
     def index():
-        tempData = andor.getStatusTEC()["temperature"]
-        return render_template("index.html", tempData=tempData)
+        tempData = andor.getStatusTEC()['temperature']
+        return render_template('index.html', tempData=tempData)
 
-    @app.route("/initialize")
+    @app.route('/initialize')
     def route_initialize():
         status = startup()
         activateCooling()  # make this a part of a separate route later
         return status
 
-    @app.route("/shutdown")
+    @app.route('/shutdown')
     def route_shutdown():
         deactivateCooling()  # same here
-        while andor.getStatusTEC()["temperature"] < -10:
-            print("waiting to warm: ", andor.getStatusTEC()["temperature"])
+        while andor.getStatusTEC()['temperature'] < -10:
+            print('waiting to warm: ', andor.getStatusTEC()['temperature'])
             time.sleep(5)
         # We assume the fan should always be on. Testing to turn it off did not work.
         status = andor.shutdown()
-        return {"status": status}
+        return {'status': status}
 
-    @app.route("/getTemperature")
+    @app.route('/getTemperature')
     def route_getTemperature():
-        # return str(andor.getStatusTEC()['temperature'])
         print(andor.getStatusTEC())
         return jsonify(andor.getStatusTEC())
 
-    @app.route("/setTemperature", methods=["POST"])
+    @app.route('/setTemperature', methods=['POST'])
     def route_setTemperature():
-        if request.method == "POST":
+        if request.method == 'POST':
             req = request.get_json(force=True)
 
             try:
-                req_temperature = int(req["temperature"])
-                app.logger.info(f"Setting temperature to: {req_temperature:.2f} [C]")
+                req_temperature = int(req['temperature'])
+                app.logger.info(f'Setting temperature to: {req_temperature:.2f} [C]')
                 andor.setTargetTEC(req_temperature)
             except ValueError:
                 app.logger.info(
-                    "Post request received a parameter of invalid type (must be int)"
+                    'Post request received a parameter of invalid type (must be int)'
                 )
 
-        return str(req["temperature"])
+        return str(req['temperature'])
 
-    # def route_setTemperature():
-    #     """
-    #     Sets the temperature of the camera in Celsius. Uses the 'POST' method
-    #     to take in form requests from the front end.
-
-    #     Returns the set temperature for display on the front end.
-    #     """
-    #     if request.method == "POST":
-    #         app.logger.info('setting temperature')
-    #         req = request.get_json(force=True)
-
-    #         #change_temp = andor.setTemperature(req['temp'])
-    #         activateCooling(req['temp'])
-
-    #         curr_temp = andor.getStatusTEC()['temperature']
-    #         while curr_temp != req['temp']:
-    #             curr_temp = andor.getStatusTEC()['temperature']
-    #         deactivateCooling()
-
-    #         app.logger.info(andor.getStatusTEC()['temperature'])
-
-    #         res = req['temp']
-
-    #         return res
-
-    # @app.route('/getStatusTEC')
-    # def route_getStatusTEC():
-    #     return str(andor.getStatusTEC()['status'])
-
-    @app.route("/testReturnFITS", methods=["GET"])
-    def route_testReturnFITS():
-        acq = acquisition((1024, 1024), exposure_time=0.1)
-
-        hdu = fits.PrimaryHDU(data=acq["data"].astype(numpy.uint16))
-        filename = f'{datetime.now().strftime("%m-%d-%Y_T%H%M%S")}.fits'
-        hdu.writeto("./fits_files/" + filename)
-
-        # np.savetxt('./uploads/' + filename, acq['data'], delimiter=',')
-        uploads = os.path.join(current_app.root_path, "./fits_files/")
-        return send_from_directory(uploads, filename, as_attachment=True)
-
-    @app.route("/testLongExposure")
+    @app.route('/testLongExposure')
     def route_testLongExposure():
         acquisition((1024, 1024), exposure_time=10)
-        return str("Finished Acquiring after 10s")
+        return str('Finished Acquiring after 10s')
 
     @app.route("/capture", methods=["POST"])
     async def route_capture():
-        """
+        '''
         Attempts to take a picture with the camera. Uses the 'POST' method
         to take in form requests from the front end.
 
         Returns the url for the fits file generated, which is then used for
         JS9's display.
         Throws an error if status code is not 20002 (success).
-        """
-        if request.method == "POST":
+        '''
+        if request.method == 'POST':
             req = request.get_json(force=True)
             req = json.loads(req)
-            dim = andor.getDetector()["dimensions"]
+            dim = andor.getDetector()['dimensions']
 
             # check if acquisition is already in progress
             status = andor.getStatus()
             if status == 20072:
-                return {"message": str("Acquisition already in progress.")}
+                return {'message': str('Acquisition already in progress.')}
 
             # handle filter type - untested, uncomment if using filter wheel
 
@@ -268,7 +221,7 @@ def create_app(test_config=None):
             #     app.logger.info(filter_msg)
 
             # handle img type
-            if req["imgtype"] == "Bias" or req["imgtype"] == "Dark":
+            if req['imgtype'] == 'Bias' or req['imgtype'] == 'Dark':
                 # Keep shutter closed during biases and darks
                 andor.setShutter(1, 2, 50, 50)
                 andor.setImage(1, 1, 1, dim[0], 1, dim[1])
@@ -278,27 +231,27 @@ def create_app(test_config=None):
 
             # handle exposure type
             # refer to pg 41 - 45 of sdk for acquisition mode info
-            exptype = req["exptype"]
-            if exptype == "Single":
+            exptype = req['exptype']
+            if exptype == 'Single':
                 andor.setAcquisitionMode(1)
-                andor.setExposureTime(float(req["exptime"]))
+                andor.setExposureTime(float(req['exptime']))
 
-            elif exptype == "Real Time":
-                # this uses "run till abort" mode - how do we abort it?
+            elif exptype == 'Real Time':
+                # this uses 'run till abort' mode - how do we abort it?
                 andor.setAcquisitionMode(1)
                 andor.setExposureTime(1)
                 # andor.setKineticCycleTime(0)
-                req["exptime"] = 1
+                req['exptime'] = 1
 
-            elif exptype == "Series":
+            elif exptype == 'Series':
                 andor.setAcquisitionMode(3)
-                andor.setNumberKinetics(int(req["expnum"]))
-                andor.setExposureTime(float(req["exptime"]))
+                andor.setNumberKinetics(int(req['expnum']))
+                andor.setExposureTime(float(req['exptime']))
 
             file_name = (
-                f"{DEFAULT_PATH}/temp.fits"
-                if exptype == "Real Time"
-                else getFilePath(None)
+                f'{DEFAULT_PATH}/temp.fits'
+                if exptype == 'Real Time'
+                else path_validation(req['filename'])
             )
 
             date_obs = Time.now()
@@ -308,82 +261,81 @@ def create_app(test_config=None):
             # todo: review parallelism, threading behavior is what we want?
             while status == 20072:
                 status = andor.getStatus()
-                app.logger.info("Acquisition in progress")
+                app.logger.info('Acquisition in progress')
 
             await asyncio.sleep(float(req["exptime"]) + 0.5)
-
             img = andor.getAcquiredData(
                 dim
             )  # TODO: throws an error here! gotta wait for acquisition
 
-            comment = req["comment"]
+            comment = req['comment']
 
-            focus_match = re.match(r"^focus\s*[:=]\s*(-?[0-9\.]+)$", comment)
+            focus_match = re.match(r'^focus\s*[:=]\s*(-?[0-9\.]+)$', comment)
             if focus_match is not None:
                 focus = float(focus_match.group(1))
             else:
-                focus = ""
+                focus = ''
 
-            if img["status"] == 20002:
+            if img['status'] == 20002:
                 # use astropy here to write a fits file
                 andor.setShutter(1, 0, 50, 50)  # closes shutter
                 # home_filter() # uncomment if using filter wheel
-                hdu = fits.PrimaryHDU(img["data"].astype(numpy.uint16))
-                hdu.header["DATE-OBS"] = date_obs.isot
-                hdu.header["COMMENT"] = comment
-                hdu.header["INSTRUME"] = "iKon-M 934 CCD DU934P-BEX2-DD"
-                hdu.header["XBINNING"] = "1"
-                hdu.header["YBINNING"] = "1"
-                hdu.header["XPIXSZ"] = "13"
-                hdu.header["YPIXSZ"] = "13"
-                hdu.header["FOCALLEN"] = "5766"
+                hdu = fits.PrimaryHDU(img['data'].astype(numpy.uint16))
+                hdu.header['DATE-OBS'] = date_obs.isot
+                hdu.header['COMMENT'] = comment
+                hdu.header['INSTRUME'] = 'iKon-M 934 CCD DU934P-BEX2-DD'
+                hdu.header['XBINNING'] = '1'
+                hdu.header['YBINNING'] = '1'
+                hdu.header['XPIXSZ'] = '13'
+                hdu.header['YPIXSZ'] = '13'
+                hdu.header['FOCALLEN'] = '5766'
 
-                hdu.header["EXPTIME"] = (
-                    float(req["exptime"]),
-                    "Exposure Time (Seconds)",
+                hdu.header['EXPTIME'] = (
+                    float(req['exptime']),
+                    'Exposure Time (Seconds)',
                 )
-                hdu.header["EXP_TYPE"] = (
-                    str(req["exptype"]),
-                    "Exposure Type (Single, Real Time, or Series)",
+                hdu.header['EXP_TYPE'] = (
+                    str(req['exptype']),
+                    'Exposure Type (Single, Real Time, or Series)',
                 )
-                hdu.header["IMAGETYP"] = (
-                    str(req["imgtype"]),
-                    "Image Type (Bias, Flat, Dark, or Object)",
+                hdu.header['IMAGETYP'] = (
+                    str(req['imgtype']),
+                    'Image Type (Bias, Flat, Dark, or Object)',
                 )
-                hdu.header["FILTER"] = (str(req["filtype"]), "Filter (Ha, B, V, g, r)")
-                hdu.header["CCD-TEMP"] = (
-                    str(f"{andor.getStatusTEC()['temperature']:.2f}"),
-                    "CCD Temperature during Exposure",
+                hdu.header['FILTER'] = (str(req['filtype']), 'Filter (Ha, B, V, g, r)')
+                hdu.header['CCD-TEMP'] = (
+                    str(f'{andor.getStatusTEC()["temperature"]:.3f}'),
+                    'CCD Temperature during Exposure',
                 )
                 hdu.header['FOCUS'] = (
                     focus,
-                    "Relative focus position [microns]"
+                    'Relative focus position [microns]'
                 )
                 try:
                     hdu.writeto(file_name, overwrite=True)
                 except:
-                    print("Failed to write")
+                    print('Failed to write')
 
                 return {
-                    "filename": os.path.basename(file_name),
-                    "url": file_name,
-                    "message": "Capture Successful",
+                    'filename': os.path.basename(file_name),
+                    'url': file_name,
+                    'message': 'Capture Successful',
                 }
 
             else:
                 andor.setShutter(1, 0, 50, 50)
                 # home_filter()  # uncomment if using filter wheel
-                return {"message": str("Capture Unsuccessful")}
+                return {'message': str('Capture Unsuccessful')}
 
-    @app.route("/getFilterWheel")
+    @app.route('/getFilterWheel')
     async def route_get_filter_wheel():
-        """Returns the position of the filter wheel."""
+        '''Returns the position of the filter wheel.'''
         if DEBUGGING:
-            return jsonify({"success": True, "filter": FILTER_DICT_REVERSE[DUMMY_FILTER_POSITION], "error": ""})
-
-        status, reply = await send_to_wheel("get")
+            return jsonify({'success': True, 'filter': FILTER_DICT_REVERSE[DUMMY_FILTER_POSITION], 'error': ''})
+        
+        status, reply = await send_to_wheel('get')
         filter_name = None
-        error = ""
+        error = ''
 
         if status:
             success = True
@@ -393,33 +345,33 @@ def create_app(test_config=None):
             success = False
             error = reply
 
-        return jsonify({"success": success, "filter": filter_name, "error": error})
+        return jsonify({'success': success, 'filter': filter_name, 'error': error})
 
-    @app.route("/setFilterWheel", methods=["POST"])
+    @app.route('/setFilterWheel', methods=['POST'])
     async def route_set_filter_wheel():
-        """Moves the filter wheel to a given position by filter name."""
+        '''Moves the filter wheel to a given position by filter name.'''
 
         global DUMMY_FILTER_POSITION
 
         payload = dict(
-            message="",
+            message='',
             success=False,
-            error="",
+            error='',
         )
 
-        if request.method == "POST":
+        if request.method == 'POST':
             req = request.get_json(force=True)
         else:
-            payload["error"] = "Invalid request method."
+            payload['error'] = 'Invalid request method.'
             return jsonify(payload)
 
-        if "filter" not in req:
-            payload["error"] = "Filter not found in request."
+        if 'filter' not in req:
+            payload['error'] = 'Filter not found in request.'
             return jsonify(payload)
 
-        filter = req["filter"]
+        filter = req['filter']
         if filter not in FILTER_DICT:
-            payload["error"] = f"Unknown filter {filter}."
+            payload['error'] = f'Unknown filter {filter}.'
             return jsonify(payload)
 
         filter_num = FILTER_DICT[filter]
@@ -427,42 +379,42 @@ def create_app(test_config=None):
         if DEBUGGING:
             await asyncio.sleep(2)
             DUMMY_FILTER_POSITION = filter_num
-            payload["success"] = True
+            payload['success'] = True
             return jsonify(payload)
 
-        status, reply = await send_to_wheel(f"move {filter_num}")
+        status, reply = await send_to_wheel(f'move {filter_num}')
 
-        payload["success"] = status
+        payload['success'] = status
         if status:
-            payload["message"] = f"Filter wheel moved to filter {filter}."
+            payload['message'] = f'Filter wheel moved to filter {filter}.'
         else:
-            payload["error"] = reply
+            payload['error'] = reply
 
         return jsonify(payload)
 
-    @app.route("/homeFilterWheel")
+    @app.route('/homeFilterWheel')
     async def route_home_filter_wheel():
-        """Homes the filter wheel."""
+        '''Homes the filter wheel.'''
 
         global DUMMY_FILTER_POSITION
 
         if DEBUGGING:
             await asyncio.sleep(2)
             DUMMY_FILTER_POSITION = 0
-            return dict(message="", success=True, error="")
+            return dict(message='', success=True, error='')
 
         payload = dict(
-            message="",
+            message='',
             success=False,
-            error="",
+            error='',
         )
 
-        status, reply = await send_to_wheel("home")
-        payload["success"] = status
+        status, reply = await send_to_wheel('home')
+        payload['success'] = status
         if status:
-            payload["message"] = "Filter wheel has been homed."
+            payload['message'] = 'Filter wheel has been homed.'
         else:
-            payload["error"] = reply
+            payload['error'] = reply
         print(payload)
         return jsonify(payload)
 
@@ -476,9 +428,11 @@ def OnExitApp():
 atexit.register(OnExitApp)
 
 app = create_app()
+from framing import register_framing_blueprints
 
+register_framing_blueprints(app)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     # FOR DEBUGGING, USE:
-    # app.run(host="127.0.0.1", port=8000, debug=True, processes=1, threaded=False)
-    app.run(host="127.0.0.1", port=3000, debug=True)
+    # app.run(host='127.0.0.1', port=8000, debug=True, processes=1, threaded=False)
+    app.run(host='127.0.0.1', port=3000, debug=True)
