@@ -3,6 +3,7 @@ import atexit
 import json
 import logging
 import os
+import sys
 import re
 import time
 from datetime import datetime
@@ -462,8 +463,8 @@ atexit.register(OnExitApp)
 
 app = create_app()
 
-# This does not work on windows (due to astrometry). For now we set it to only work when not DEBUGGING
-if not DEBUGGING:
+# Framing does not work on windows (due to astrometry)
+if sys.platform != 'win32':
     from framing import register_framing_blueprints
 
     register_framing_blueprints(app)
