@@ -20,6 +20,7 @@ from flask import (
     request,
     send_from_directory,
 )
+from flask_cors import CORS
 
 from andor_routines import acquisition, activateCooling, deactivateCooling, startup
 from debug import DEBUGGING
@@ -131,6 +132,7 @@ async def send_to_wheel(command: str):
 def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
+    CORS(app)
 
     # app.config['UPLOAD_FOLDER'] = 'static/fits_files'
 
@@ -465,9 +467,11 @@ app = create_app()
 
 # Framing does not work on windows (due to astrometry)
 if sys.platform != 'win32':
-    from framing import register_framing_blueprints
+  import framing
+  framing.register_blueprint(app)
 
-    register_framing_blueprints(app)
+import focus
+focus.register_blueprint(app)
 
 if __name__ == '__main__':
     # FOR DEBUGGING, USE:
