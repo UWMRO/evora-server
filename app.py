@@ -251,7 +251,7 @@ def create_app(test_config=None):
             file_name = (
                 f'{DEFAULT_PATH}/temp.fits'
                 if exptype == 'Real Time'
-                else path_validation(req['filename'])
+                else path_validation('')
             )
 
             date_obs = Time.now()
