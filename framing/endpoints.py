@@ -20,9 +20,9 @@ def plate_solve():
     payload = request.get_json()
     file_path = payload['filename']
     position_hint = PositionHint(
-        ra_deg=payload.get('hint_ra_deg', 0),
-        dec_deg=payload.get('hint_dec_deg', 0),
-        radius_deg=payload.get('hint_radius_deg', 360)
+        ra_deg=float(payload.get('hint_ra_deg', 0)),
+        dec_deg=float(payload.get('hint_dec_deg', 0)),
+        radius_deg=float(payload.get('hint_radius_deg', 360))
     ) 
     res = solve_fits(file_path, position_hint=position_hint)
     return jsonify(res.__dict__)
