@@ -3,6 +3,7 @@ import atexit
 import json
 import logging
 import os
+import sys
 import re
 import time
 from datetime import datetime
@@ -44,45 +45,51 @@ DEFAULT_PATH = '/data/ecam'
 
 DUMMY_FILTER_POSITION = 0
 
-def path_validation(filename : str):
-    '''
-    Input validation for the file name.
-    - The directory will be created if it does not exist
-    - '.fits' will be appended to the file name if it is not already present
-    - If the file name is empty, it will be saved as image.fits
-    - If the file name is invalid, it will be saved as image.fits
-    - If the file name already exists, it will be saved as image(0).fits
-        image(1).fits, image(2).fits, etc.
-    
-    Parameters
-    ----------
-    file : str
-        The file name to validate.
+ABORT_FLAG = False
 
-    Returns
-    -------
-    str
-        The validated file name appended to DEFAULT_PATH.
-    '''
-    invalid_characters = [':', '<', '>', '/', '\\', "'", '|', '?', '*']
-    timestamp = Time.now().utc.isot.split('T')[0].replace('-', '')
+def getFilePath(file):
+    """
+    Formats the given file name to be valid.
+    If the file contains invalid characters or is empty, image.fits will be used.
+    if the file already exists, it will be saved as:
+        name(0), name(1), name(2), ..., name(n)
+    """
 
-    os.makedirs(DEFAULT_PATH, exist_ok=True)
+    default_image_name = "ecam-{seq:04d}.fits"
 
-    if len(filename) == 0 or any(c in filename for c in invalid_characters):
-        filename = f'ecam-{timestamp}.fits'
-    
-    if not (filename.endswith('.fits')):
-        filename += '.fits'
-        
-    no_extension = filename.split('.fits')[0]
-    if os.path.isfile(os.path.join(DEFAULT_PATH, filename)):
-        num = 0
-        while os.path.isfile(f'{no_extension}({num}).fits'):
-            num += 1
-        filename = f'image({num}).fits'
+    date = Time.now().utc.isot.split("T")[0].replace("-", "")
 
-    return os.path.join(DEFAULT_PATH, filename)
+    path = os.path.join(DEFAULT_PATH, date)
+    os.makedirs(path, exist_ok=True)
+
+    invalid_characters = [":", "<", ">", "/", "\\", '"', "|", "?", "*", ".."]
+    # if invalid filename, use image.fits
+    if file is None or file == "" or any(c in file for c in invalid_characters):
+        all_files = list(sorted(glob(os.path.join(path, "ecam-*.fits"))))
+        if len(all_files) == 0:
+            seq = 1
+        else:
+            match = re.search(r"ecam\-([0-9]+)", all_files[-1])
+            if match:
+                seq = int(match.group(1)) + 1
+            else:
+                seq = 1
+        file = default_image_name.format(seq=seq)
+
+    # ensure extension is .fits
+    if file[-1] == ".":
+        file += "fits"
+    if len(file) < 5 or file[-5:] != ".fits":
+        file += ".fits"
+
+    # ensure nothing gets overwritten
+    num = 0
+    length = len(file[0:-5])
+    while os.path.isfile(f"{DEFAULT_PATH}/{file}"):
+        file = file[0:length] + f"({num})" + file[-5:]
+        num += 1
+
+    return os.path.join(path, file)
 
 
 async def send_to_wheel(command: str):
@@ -194,8 +201,8 @@ def create_app(test_config=None):
         acquisition((1024, 1024), exposure_time=10)
         return str('Finished Acquiring after 10s')
 
-    @app.route('/capture', methods=['POST'])
-    def route_capture():
+    @app.route("/capture", methods=["POST"])
+    async def route_capture():
         '''
         Attempts to take a picture with the camera. Uses the 'POST' method
         to take in form requests from the front end.
@@ -204,6 +211,11 @@ def create_app(test_config=None):
         JS9's display.
         Throws an error if status code is not 20002 (success).
         '''
+
+        global ABORT_FLAG
+
+        ABORT_FLAG = False
+
         if request.method == 'POST':
             req = request.get_json(force=True)
             req = json.loads(req)
@@ -211,7 +223,7 @@ def create_app(test_config=None):
 
             # check if acquisition is already in progress
             status = andor.getStatus()
-            if status == 20072:
+            if status['status'] == 20072:
                 return {'message': str('Acquisition already in progress.')}
 
             # handle filter type - untested, uncomment if using filter wheel
@@ -253,7 +265,7 @@ def create_app(test_config=None):
             file_name = (
                 f'{DEFAULT_PATH}/temp.fits'
                 if exptype == 'Real Time'
-                else path_validation('')
+                else getFilePath(None)
             )
 
             date_obs = Time.now()
@@ -261,11 +273,23 @@ def create_app(test_config=None):
             andor.startAcquisition()
             status = andor.getStatus()
             # todo: review parallelism, threading behavior is what we want?
-            while status == 20072:
-                status = andor.getStatus()
-                app.logger.info('Acquisition in progress')
+            # while status == 20072:
+            #     status = andor.getStatus()
+            #     app.logger.info('Acquisition in progress')
 
-            time.sleep(float(req['exptime']) + 0.5)
+            elapsed = 0.0
+            while True:
+                if ABORT_FLAG:
+                    break
+                await asyncio.sleep(0.1)
+                elapsed += 0.1
+                if elapsed >= float(req["exptime"]) + 0.5:
+                    break
+            
+            if ABORT_FLAG:
+                andor.abortAcquisition()
+                return {'message': str('Capture aborted')}
+
             img = andor.getAcquiredData(
                 dim
             )  # TODO: throws an error here! gotta wait for acquisition
@@ -328,6 +352,16 @@ def create_app(test_config=None):
                 andor.setShutter(1, 0, 50, 50)
                 # home_filter()  # uncomment if using filter wheel
                 return {'message': str('Capture Unsuccessful')}
+
+    @app.route('/abort')
+    async def route_abort_capture():
+        '''Abort exposure.'''
+
+        global ABORT_FLAG
+
+        ABORT_FLAG = True
+
+        return {'message': 'Aborting exposure'}
 
     @app.route('/getFilterWheel')
     async def route_get_filter_wheel():
@@ -431,14 +465,15 @@ atexit.register(OnExitApp)
 
 app = create_app()
 
-import framing
-framing.register_blueprint(app)
+# Framing does not work on windows (due to astrometry)
+if sys.platform != 'win32':
+  import framing
+  framing.register_blueprint(app)
 
 import focus
 focus.register_blueprint(app)
 
-
 if __name__ == '__main__':
     # FOR DEBUGGING, USE:
-    # app.run(host='127.0.0.1', port=8000, debug=True, processes=1, threaded=False)
-    app.run(host='127.0.0.1', port=3000, debug=True)
+    # app.run(host='127.0.0.1', port=8000, debug=True, processes=1)
+    app.run(host='127.0.0.1', port=3000, debug=True, processes=1)

@@ -131,6 +131,7 @@ class Dummy:
         else:
             return DRV_NOT_INITIALIZED
 
+    @classmethod
     def abortAcquisition(cls):
         if cls.initialized:
             cls.acquiring = False
