@@ -431,11 +431,11 @@ atexit.register(OnExitApp)
 
 app = create_app()
 
-from framing import register_framing_blueprints
-register_framing_blueprints(app)
+import framing
+framing.register_blueprint(app)
 
-from focus import register_focus_assist_blueprints
-register_focus_assist_blueprints(app)
+import focus
+focus.register_blueprint(app)
 
 
 if __name__ == '__main__':

@@ -18,7 +18,7 @@ from flask import Blueprint
 blueprint = Blueprint('focus_assist', __name__)
 
 
-SessionStorage: Dict[str: FocusSession] = {}
+SessionStorage: {str: FocusSession} = {}
 
 
 def analyze(session):

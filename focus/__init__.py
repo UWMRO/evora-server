@@ -1,5 +1,5 @@
 from flask import Blueprint
 from .endpoints import blueprint
 
-def register_focus_assist_blueprints(app):
+def register_blueprint(app):
     app.register_blueprint(blueprint)
