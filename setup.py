@@ -58,7 +58,18 @@ setup(
     description="Package containing PyBind11 wrapper code for the Andor SDK.",
     author="Astronomy Undergraduate Engineering Group",
     setup_requires=["pybind11"],
-    install_requires=["numpy", "astropy>=4.0", "pillow", "flask[async]", "gunicorn>=20.1.0"],
+    install_requires=[
+        "numpy",
+        "astropy>=4.0",
+        "pillow",
+        "flask[async]",
+        "gunicorn>=20.1.0",
+        "flask_cors",
+        "matplotlib",
+        "sep",
+        "photoutils",
+        "astrometry; platform_system != 'Windows'"
+    ],
     packages=find_packages(exclude=("tests*")),
     ext_modules=ext_modules,
 )
