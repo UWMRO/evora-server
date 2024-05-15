@@ -67,7 +67,7 @@ setup(
         "flask_cors",
         "matplotlib",
         "sep",
-        "photoutils",
+        "photutils",
         "astrometry; platform_system != 'Windows'"
     ],
     packages=find_packages(exclude=("tests*")),
