@@ -4,7 +4,7 @@ Andor wrapper for Evora and Flask server.
 
 ## Installation
 
-`evora-server` requires the proprietary Andor libraries to be installed in `/usr/local/lib`. The library can be used for debugging without the Andor libraries, but they are necessary to run the actual camera. To run the server in debug mode, with the dummy module mocking the camera, edit `evora/debug.py` and set `DEBUGGING = True`. This will create a folder in the `evora-server` root that acts as the `/data` folder.
+`evora-server` requires the proprietary Andor libraries to be installed in `/usr/local/lib`. The library can be used for debugging without the Andor libraries, but they are necessary to run the actual camera. 
 
 To install `evora-server`, clone the repository and run
 
@@ -17,6 +17,10 @@ or to install in editable mode
 ```console
 pip install -e .
 ```
+
+### Debug mode
+
+To run the server in debug mode, with the dummy module mocking the camera, edit `evora/debug.py` and set `DEBUGGING = True`. This will create a folder in the `evora-server` root that acts as the `/data` folder.
 
 ## Running the server
 
