@@ -51,7 +51,7 @@ ext_modules = [
     )
 ]
 
-
+# Works with Python 3.10.0
 setup(
     name="evora",
     version="1.0.0",
