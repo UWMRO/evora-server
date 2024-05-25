@@ -263,18 +263,13 @@ def create_app(test_config=None):
             #     status = andor.getStatus()
             #     app.logger.info('Acquisition in progress')
 
-            elapsed = 0.0
-            while True:
-                if ABORT_FLAG:
-                    break
-                await asyncio.sleep(0.1)
-                elapsed += 0.1
-                if elapsed >= float(req["exptime"]) + 0.5:
-                    break
+            start_time = datetime.now()
 
-            if ABORT_FLAG:
-                andor.abortAcquisition()
-                return {'message': str('Capture aborted'), 'status': 1}
+            while (datetime.now() - start_time).total_seconds() < float(req["exptime"]):
+                if ABORT_FLAG:
+                    andor.abortAcquisition()
+                    return {'message': str('Capture aborted'), 'status': 1}
+                await asyncio.sleep(0.1)
 
             img = andor.getAcquiredData(
                 dim
