@@ -276,6 +276,10 @@ def create_app(test_config=None):
                     return {'message': str('Capture aborted'), 'status': 1}
                 await asyncio.sleep(0.1)
 
+            # An additional delay because the camera may not have totally finished
+            # acquiring after exptime.
+            await asyncio.sleep(0.5)
+            
             img = andor.getAcquiredData(
                 dim
             )  # TODO: throws an error here! gotta wait for acquisition
