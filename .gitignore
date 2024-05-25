@@ -132,3 +132,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 node_modules
+
+# Ignore data folder if debugging
+data/

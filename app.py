@@ -23,7 +23,7 @@ from flask import (
 from flask_cors import CORS
 
 from andor_routines import acquisition, activateCooling, deactivateCooling, startup
-from debug import DEBUGGING
+from evora.debug import DEBUGGING
 
 if DEBUGGING:
     from evora.dummy import Dummy as andor  # andor
@@ -42,6 +42,11 @@ FILTER_DICT = {'Ha': 0, 'B': 1, 'V': 2, 'g': 3, 'r': 4, 'i': 5}
 FILTER_DICT_REVERSE = {0: 'Ha', 1: 'B', 2: 'V', 3: 'g', 4: 'r', 5: 'i'}
 
 DEFAULT_PATH = '/data/ecam'
+
+# If we're debugging, use a local directory instead - create if doesn't exist
+if DEBUGGING:
+    DEFAULT_PATH = './' + DEFAULT_PATH
+    os.makedirs(os.path.dirname(DEFAULT_PATH), exist_ok=True)
 
 DUMMY_FILTER_POSITION = 0
 
