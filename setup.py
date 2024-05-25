@@ -54,7 +54,7 @@ ext_modules = [
 # Works with Python 3.10.0
 setup(
     name="evora",
-    version="1.0.0",
+    version="0.2.1a0",
     description="Package containing PyBind11 wrapper code for the Andor SDK.",
     author="Astronomy Undergraduate Engineering Group",
     setup_requires=["pybind11"],
