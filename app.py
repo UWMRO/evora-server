@@ -271,7 +271,7 @@ def create_app(test_config=None):
                 elapsed += 0.1
                 if elapsed >= float(req["exptime"]) + 0.5:
                     break
-            
+
             if ABORT_FLAG:
                 andor.abortAcquisition()
                 return {'message': str('Capture aborted'), 'status': 1}
@@ -355,7 +355,7 @@ def create_app(test_config=None):
         '''Returns the position of the filter wheel.'''
         if DEBUGGING:
             return jsonify({'success': True, 'filter': FILTER_DICT_REVERSE[DUMMY_FILTER_POSITION], 'error': ''})
-        
+
         status, reply = await send_to_wheel('get')
         filter_name = None
         error = ''
@@ -461,6 +461,8 @@ import focus
 focus.register_blueprint(app)
 
 if __name__ == '__main__':
+    # TO RUN IN PRODUCTION, USE:
+    # app.run(host='127.0.0.1', port=8000, debug=False, threaded=True, processes=1)
+
     # FOR DEBUGGING, USE:
-    # app.run(host='127.0.0.1', port=8000, debug=True, processes=1)
-    app.run(host='127.0.0.1', port=3000, debug=True, processes=1)
+    app.run(host='127.0.0.1', port=3000, debug=True, processes=1, threaded=True)
