@@ -462,6 +462,9 @@ focus.register_blueprint(app)
 
 if __name__ == '__main__':
     # TO RUN IN PRODUCTION, USE:
+    # The key here is threaded=True which allows the server to handle multiple
+    # requests at once but withing a single process (?), which allows sharing the
+    # camera connection.
     # app.run(host='127.0.0.1', port=8000, debug=False, threaded=True, processes=1)
 
     # FOR DEBUGGING, USE:
