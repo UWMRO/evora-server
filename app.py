@@ -221,12 +221,26 @@ def create_app(test_config=None):
         if request.method == 'POST':
             req = request.get_json(force=True)
             req = json.loads(req)
+
+            # validate parameters
+            if 'exptime' not in req or float(req['exptime']) <= 0:
+                return {'message': 'Invalid or missing exposure time.', 'status': 2}
+            if 'exptype' not in req or req['exptype'] not in ['Single', 'Real Time', 'Series']:
+                return {'message': 'Invalid or missing exposure type', 'status': 2}
+            if 'imgtype' not in req or req['imgtype'] not in ['Bias', 'Dark', 'Flat', 'Object']:
+                return {'message': 'Invalid or missing image type.', 'status': 2}
+            if 'filtype' not in req or req['filtype'] not in ['Ha', 'B', 'V', 'g', 'r', 'i']:
+                return {'message': 'Invalid or missing filter type.', 'status': 2}
+            if 'comment' not in req:
+                return {'message': 'Missing comment.', 'status': 2}
+            
+
             dim = andor.getDetector()['dimensions']
 
             # check if acquisition is already in progress
             status = andor.getStatus()
             if status['status'] == 20072:
-                return {'message': str('Acquisition already in progress.'), 'status': 2}
+                return {'message': 'Acquisition already in progress.', 'status': 2}
 
             # handle img type
             if req['imgtype'] == 'Bias' or req['imgtype'] == 'Dark':
