@@ -6,6 +6,7 @@ import os
 import sys
 import re
 import time
+import typing
 from datetime import datetime
 from glob import glob
 
@@ -179,7 +180,14 @@ def create_app(test_config=None):
             req = request.get_json(force=True)
 
             try:
+                valid_range: dict = andor.getRangeTEC()
                 req_temperature = int(req['temperature'])
+                print(valid_range)
+                if req_temperature < valid_range['min'] or req_temperature > valid_range['max']:
+                    app.logger.info(
+                        f'Setting temperature to: {req_temperature:.2f} [C] is out of range. Must be between {valid_range["min"]} and {valid_range["max"]}'
+                    )
+                    return str(-999)  # indicates tempreature was out of range
                 app.logger.info(f'Setting temperature to: {req_temperature:.2f} [C]')
                 andor.setTargetTEC(req_temperature)
             except ValueError:

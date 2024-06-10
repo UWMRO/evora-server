@@ -111,6 +111,10 @@ class Dummy:
                 return {"min": -999.0, "max": -999.0, "status": DRV_ACQUIRING}
         else:
             return {"min": -999.0, "max": -999.0, "status": DRV_NOT_INITIALIZED}
+    
+    @classmethod
+    def getRangeTEC(cls):
+        return cls.getTemperatureRange()
 
     # Acquisition
     @classmethod
