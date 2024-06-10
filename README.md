@@ -4,7 +4,7 @@ Andor wrapper for Evora and Flask server.
 
 ## Installation
 
-`evora-server` requires the proprietary Andor libraries to be installed in `/usr/local/lib`. The library can be used for debugging without the Andor libraries, but they are necessary to run the actual camera. To run the server in debug mode, with the dummy module mocking the camera, edit `debug.py` and set `DEBUGGING = True`.
+`evora-server` requires the proprietary Andor libraries to be installed in `/usr/local/lib`. The library can be used for debugging without the Andor libraries, but they are necessary to run the actual camera. 
 
 To install `evora-server`, clone the repository and run
 
@@ -17,6 +17,10 @@ or to install in editable mode
 ```console
 pip install -e .
 ```
+
+### Debug mode
+
+To run the server in debug mode, with the dummy module mocking the camera, edit `evora/debug.py` and set `DEBUGGING = True`. This will create a folder in the `evora-server` root that acts as the `/data` folder.
 
 ## Running the server
 
@@ -32,23 +36,17 @@ which is equivalent to
 flask --debug run --port 3000
 ```
 
-
-
 ## Images
 
 `evora-server` will save camera files to `/data/ecam/DATE` where `DATE` is in the format `20230504` and rotates at midnight UTC.
 
 If `/data/ecam` does not exist, create it with `mkdir -p` and make sure it has the right permissions for `evora-server` to write to it.
 
+**Note**: Mac OSx doesn't allow the creation of folders in the root `/` directory, since [OSx makes the root directory read-only by default](https://apple.stackexchange.com/questions/388236/unable-to-create-folder-in-root-of-macintosh-hd).
+
 ## Deploying for production
 
-The recommended way to deploy `evora-server` is behind a [gunicorn](https://gunicorn.org) web server. To run the Flask webapp from `gunicorn`, execute
-
-```console
-gunicorn -w 1 'app:app'
-```
-
-which will spin a web server with one worker. Currently the app is limited to run with one single worker since the connection to the camera cannot be shared.
+The recommended way to run `evora-server` in production is by running the app with the Flask development server with a single process and threading. This allows for concurrent routes and asyncio to work (which is required for features such as aborting exposures). At this point this is preferred to using a UWSGI layer such as `gunicorn` since the camera has a single connection so we cannot run multiple workers.
 
 To run this command in the background as a systemd service, create a file `/etc/systemd/system/evora-server.service` with the contents
 
@@ -58,13 +56,13 @@ Description=evora-server
 
 [Service]
 WorkingDirectory=/home/mrouser/Github/evora-server
-ExecStart=/home/mrouser/Github/evora-server/gunicorn-start.sh
+ExecStart=/home/mrouser/Github/evora-server/standalone-start.sh
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-Here we are pointing to the file `gunicorn-start.sh` in the repo, which loads the conda environment and starts gunicorn. This may need to be changed for a location other than MRO. Then start the systemd service with
+Here we are pointing to the file `standalone-start.sh` in the repo, which loads the conda environment and starts the server in production mode (port 8000, threading, one worker). This may need to be changed for a location other than MRO. Then start the systemd service with
 
 ```console
 sudo systemctl daemon-reload
@@ -74,7 +72,7 @@ sudo systemctl restart evora-server
 
 ### Configuring nginx
 
-In addition to `gunicorn`, a reverse proxy is needed to run the Evora client and server in the same web server. In Ubuntu, install `nginx` (alternatively you can use `Apache`) with
+In addition to running the server, a reverse proxy is needed to run the Evora client and server in the same HTTP server. In Ubuntu, install `nginx` (alternatively you can use `Apache`) with
 
 ```console
 sudo apt update
@@ -118,7 +116,7 @@ server {
 }
 ```
 
-This configuration creates a server running on port `80` (the default HTTP) and adds a reverse proxy to where `gunicorn` is running the Flask webapp. Note that we allow requests to the API to take as much as 30 minutes (which should be enough for most exposure times). It also creates a route to expose and browse `/data`.
+This configuration creates a server running on port `80` (the default HTTP) and adds a reverse proxy to where the `evora-server` webapp is running. It also creates a route to expose and browse `/data`.
 
 After this, restart `nginx` with
 

@@ -24,7 +24,7 @@ from flask import (
 from flask_cors import CORS
 
 from andor_routines import acquisition, activateCooling, deactivateCooling, startup
-from debug import DEBUGGING
+from evora.debug import DEBUGGING
 
 if DEBUGGING:
     from evora.dummy import Dummy as andor  # andor
@@ -43,6 +43,11 @@ FILTER_DICT = {'Ha': 0, 'B': 1, 'V': 2, 'g': 3, 'r': 4, 'i': 5}
 FILTER_DICT_REVERSE = {0: 'Ha', 1: 'B', 2: 'V', 3: 'g', 4: 'r', 5: 'i'}
 
 DEFAULT_PATH = '/data/ecam'
+
+# If we're debugging, use a local directory instead - create if doesn't exist
+if DEBUGGING:
+    DEFAULT_PATH = './' + DEFAULT_PATH
+    os.makedirs(os.path.dirname(DEFAULT_PATH), exist_ok=True)
 
 DUMMY_FILTER_POSITION = 0
 
@@ -285,19 +290,18 @@ def create_app(test_config=None):
             #     status = andor.getStatus()
             #     app.logger.info('Acquisition in progress')
 
-            elapsed = 0.0
-            while True:
-                if ABORT_FLAG:
-                    break
-                await asyncio.sleep(0.1)
-                elapsed += 0.1
-                if elapsed >= float(req["exptime"]) + 0.5:
-                    break
-            
-            if ABORT_FLAG:
-                andor.abortAcquisition()
-                return {'message': str('Capture aborted'), 'status': 1}
+            start_time = datetime.now()
 
+            while (datetime.now() - start_time).total_seconds() < float(req["exptime"]):
+                if ABORT_FLAG:
+                    andor.abortAcquisition()
+                    return {'message': str('Capture aborted'), 'status': 1}
+                await asyncio.sleep(0.1)
+
+            # An additional delay because the camera may not have totally finished
+            # acquiring after exptime.
+            await asyncio.sleep(0.5)
+            
             img = andor.getAcquiredData(
                 dim
             )  # TODO: throws an error here! gotta wait for acquisition
@@ -377,7 +381,7 @@ def create_app(test_config=None):
         '''Returns the position of the filter wheel.'''
         if DEBUGGING:
             return jsonify({'success': True, 'filter': FILTER_DICT_REVERSE[DUMMY_FILTER_POSITION], 'error': ''})
-        
+
         status, reply = await send_to_wheel('get')
         filter_name = None
         error = ''
@@ -483,6 +487,11 @@ import focus
 focus.register_blueprint(app)
 
 if __name__ == '__main__':
+    # TO RUN IN PRODUCTION, USE:
+    # The key here is threaded=True which allows the server to handle multiple
+    # requests at once but withing a single process (?), which allows sharing the
+    # camera connection.
+    # app.run(host='127.0.0.1', port=8000, debug=False, threaded=True, processes=1)
+
     # FOR DEBUGGING, USE:
-    # app.run(host='127.0.0.1', port=8000, debug=True, processes=1)
-    app.run(host='127.0.0.1', port=3000, debug=True, processes=1)
+    app.run(host='127.0.0.1', port=3000, debug=True, processes=1, threaded=True)
