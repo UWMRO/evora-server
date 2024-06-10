@@ -93,6 +93,7 @@ class Dummy:
 
     @classmethod
     def initialize(cls, directory=""):
+        time.sleep(1)
         cls.initialized = True
         return DRV_SUCCESS
 
@@ -288,6 +289,7 @@ class Dummy:
     @classmethod
     def shutdown(cls):
         if not cls.acquiring:
+            time.sleep(1)
             cls.initialized = False
             cls.acquiring = False
             return DRV_SUCCESS

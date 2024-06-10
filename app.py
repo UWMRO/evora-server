@@ -167,7 +167,7 @@ def create_app(test_config=None):
     @app.route('/shutdown')
     def route_shutdown():
         deactivateCooling()  # same here
-        while andor.getStatusTEC()['temperature'] < -10:
+        while not DEBUGGING and andor.getStatusTEC()['temperature'] < -10:
             print('waiting to warm: ', andor.getStatusTEC()['temperature'])
             time.sleep(5)
         # We assume the fan should always be on. Testing to turn it off did not work.
