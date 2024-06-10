@@ -234,7 +234,7 @@ def create_app(test_config=None):
                 return {'message': 'Invalid or missing exposure type', 'status': 2}
             if 'imgtype' not in req or req['imgtype'] not in ['Bias', 'Dark', 'Flat', 'Object']:
                 return {'message': 'Invalid or missing image type.', 'status': 2}
-            if 'filtype' not in req or req['filtype'] not in ['Ha', 'B', 'V', 'g', 'r', 'i']:
+            if 'filtype' not in req or req['filtype'] not in FILTER_DICT:
                 return {'message': 'Invalid or missing filter type.', 'status': 2}
             if 'comment' not in req:
                 return {'message': 'Missing comment.', 'status': 2}
