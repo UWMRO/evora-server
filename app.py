@@ -6,6 +6,7 @@ import os
 import sys
 import re
 import time
+import argparse
 from datetime import datetime
 from glob import glob
 
@@ -447,29 +448,33 @@ def create_app(test_config=None):
 
     return app
 
-
 def OnExitApp():
     andor.shutdown()
 
-
 atexit.register(OnExitApp)
 
-app = create_app()
-
-# Framing does not work on windows (due to astrometry)
-if sys.platform != 'win32':
-  import framing
-  framing.register_blueprint(app)
-
-import focus
-focus.register_blueprint(app)
-
 if __name__ == '__main__':
-    # TO RUN IN PRODUCTION, USE:
-    # The key here is threaded=True which allows the server to handle multiple
-    # requests at once but withing a single process (?), which allows sharing the
-    # camera connection.
-    # app.run(host='127.0.0.1', port=8000, debug=False, threaded=True, processes=1)
+    # CLI app setup + argument parser
+    parser = argparse.ArgumentParser(
+                    prog='Evora Server',
+                    description='High-level server to interface with the MRO Evora CCD.')
+    parser.add_argument('--debug', type=bool, default=False, help="Run Evora in debug mode (suitable for local development)")
+    parser.add_argument('--port', type=int, default=3000, help="Port to run Evora on")
+    args = parser.parse_args() # Access arguments with parser.argument (i.e. parser.debug)
 
-    # FOR DEBUGGING, USE:
-    app.run(host='127.0.0.1', port=3000, debug=True, processes=1, threaded=True)
+    # Create app
+    app = create_app()
+
+    # Framing does not work on windows (due to astrometry)
+    if sys.platform != 'win32':
+        import framing
+        framing.register_blueprint(app)
+
+    import focus
+    focus.register_blueprint(app)
+
+    app.run(host='127.0.0.1', port=args.port, debug=args.debug, processes=1, threaded=True)
+
+# TODO:
+# - Add arg to download astrometry data
+# - Put everything into a class to make globals more pythonic to access

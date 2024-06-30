@@ -135,3 +135,6 @@ node_modules
 
 # Ignore data folder if debugging
 data/
+
+# Ignore debug.py for now
+debug.py
