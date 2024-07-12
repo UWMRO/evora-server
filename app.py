@@ -162,13 +162,13 @@ class EvoraServer:
 
         @app.route('/initialize')
         def route_initialize(self):
-            status = startup()
-            activateCooling()  # make this a part of a separate route later
+            status = startup(andor)
+            activateCooling(andor)  # make this a part of a separate route later
             return status
 
         @app.route('/shutdown')
         def route_shutdown(self):
-            deactivateCooling()  # same here
+            deactivateCooling(andor)  # same here
             while andor.getStatusTEC()['temperature'] < -10:
                 print('waiting to warm: ', andor.getStatusTEC()['temperature'])
                 time.sleep(5)
@@ -199,7 +199,7 @@ class EvoraServer:
 
         @app.route('/testLongExposure')
         def route_testLongExposure(self):
-            acquisition((1024, 1024), exposure_time=10)
+            acquisition(andor, (1024, 1024), exposure_time=10)
             return str('Finished Acquiring after 10s')
 
         @app.route("/capture", methods=["POST"])
@@ -468,8 +468,8 @@ if __name__ == '__main__':
     server = EvoraServer(args)
     app = EvoraServer.create_app(EvoraServer)
 
-    # Framing does not work on windows (due to astrometry)
-    if sys.platform != 'win32':
+    # Framing does not work on windows (due to astrometry). Disable if debugging. 
+    if sys.platform != 'win32' and not args.debug:
         import framing
         framing.register_blueprint(app)
 
