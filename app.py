@@ -36,6 +36,8 @@ else:
  this is for handling requests from the filter wheel that may take some time.
 '''
 
+# add instructions to create data dir
+
 logging.getLogger('PIL').setLevel(logging.WARNING)
 
 FILTER_DICT = {'Ha': 0, 'B': 1, 'V': 2, 'g': 3, 'r': 4, 'i': 5}

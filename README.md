@@ -40,13 +40,25 @@ flask --debug run --port 3000
 
 `evora-server` will save camera files to `/data/ecam/DATE` where `DATE` is in the format `20230504` and rotates at midnight UTC.
 
-If `/data/ecam` does not exist, create it with `mkdir -p` and make sure it has the right permissions for `evora-server` to write to it.
-
 **Note**: Mac OSx doesn't allow the creation of folders in the root `/` directory, since [OSx makes the root directory read-only by default](https://apple.stackexchange.com/questions/388236/unable-to-create-folder-in-root-of-macintosh-hd).
 
 ## Deploying for production
 
 The recommended way to run `evora-server` in production is by running the app with the Flask development server with a single process and threading. This allows for concurrent routes and asyncio to work (which is required for features such as aborting exposures). At this point this is preferred to using a UWSGI layer such as `gunicorn` since the camera has a single connection so we cannot run multiple workers.
+
+First, make sure the `/data/ecam` directory exists with the proper user permissions
+
+```console
+sudo mkdir -p /data/ecam && sudo chown -R $USER /data
+```
+
+and that the Andor SDK is installed with
+
+```console
+ls /usr/local/lib/libandor.so
+```
+
+Try to run `standalone-start.sh` in the `evora-server` now. It should start downloading around ~20 GB of data for astrometry. Once this is done, you should see the server spin up. 
 
 To run this command in the background as a systemd service, create a file `/etc/systemd/system/evora-server.service` with the contents
 

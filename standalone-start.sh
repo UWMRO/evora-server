@@ -13,7 +13,7 @@ if ! [ -d ".venv" ]; then
     source .venv/bin/activate
 
     # ... and install packages within
-    pip install .
+    pip install -e .
 else
     # start the venv
     source .venv/bin/activate
