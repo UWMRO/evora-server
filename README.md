@@ -20,7 +20,7 @@ pip install -e .
 
 ### Debug mode
 
-To run the server in debug mode, with the dummy module mocking the camera, edit `evora/debug.py` and set `DEBUGGING = True`. This will create a folder in the `evora-server` root that acts as the `/data` folder.
+To run the server in debug mode, with the dummy module mocking the camera, run the server with the `--debug` flag, like `python app.py --debug`. At first run this will create a folder in the `evora-server` root that acts as the `/data` folder.
 
 ## Running the server
 

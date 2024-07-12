@@ -1,9 +1,3 @@
-from evora.debug import DEBUGGING
-
-if DEBUGGING:
-    from evora.dummy import Dummy as andor
-else:
-    import evora.andor as andor
 import time
 
 # biases: Readout noise from camera (effectively 0 s exposure)
@@ -11,9 +5,12 @@ import time
 # darks: image while shutter closed
 
 
-def startup():
+def startup(andor):
     '''
     Initializes the camera and sets the acquisition mode to single scan.
+
+    Parameters:
+    - andor: andor camera instance
 
     Returns:
     - dimensions: tuple of the image dimensions
@@ -31,11 +28,12 @@ def startup():
     return {"dimensions": image_dimensions, "status": 20002}
 
 
-def activateCooling(target_temperature=-10):
+def activateCooling(andor, target_temperature=-10):
     '''
     Activates the camera cooling system and sets the target temperature.
 
     Parameters:
+    - andor: andor camera instance
     - target_temperature: the desired temperature of the camera sensor
 
     Returns:
@@ -47,11 +45,12 @@ def activateCooling(target_temperature=-10):
 
     return 20002
 
-def deactivateCooling(fan_mode_high=False):
+def deactivateCooling(andor, fan_mode_high=False):
     '''
     Deactivates the camera cooling system.
 
     Parameters:
+    - andor: andor camera instance
     - fan_mode_high: whether the fan mode should be set to high
 
     Returns:
@@ -63,12 +62,14 @@ def deactivateCooling(fan_mode_high=False):
     return 20002
 
 
-def acquisition(dim, exposure_time=0.1):
+def acquisition(andor, dim, exposure_time=0.1):
     '''
     Acquires an image with the given dimensions and exposure time.
 
     Parameters:
+    - andor: andor camera instance
     - dim: tuple of the image dimensions
+    - exposure_time: how long to expose for (sec)
 
     Returns:
     - data: the acquired image data
@@ -83,11 +84,12 @@ def acquisition(dim, exposure_time=0.1):
     return {"data": andor.getAcquiredData(dim)["data"], "status": 20002}
 
 
-def acquireBias(dim):
+def acquireBias(andor, dim):
     '''
     Acquires a bias image.
 
     Parameters:
+    - andor: andor camera instance
     - dim: tuple of the image dimensions
 
     Returns:
