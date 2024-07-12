@@ -24,7 +24,6 @@ from flask import (
 from flask_cors import CORS
 
 from andor_routines import acquisition, activateCooling, deactivateCooling, startup
-from evora.debug import DEBUGGING
 
 '''
  dev note: I also ran pip install aioflask and pip install asgiref to try to give
