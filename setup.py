@@ -68,7 +68,9 @@ setup(
         "matplotlib",
         "sep-pjw",
         "photutils",
-        "astrometry; platform_system != 'Windows'"
+        "astrometry; platform_system != 'Windows'",
+        "ambient_api",
+        "python-dotenv"
     ],
     packages=find_packages(exclude=("tests*")),
     ext_modules=ext_modules,
