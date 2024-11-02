@@ -227,7 +227,7 @@ def create_app(test_config=None):
             req = json.loads(req)
 
             # validate parameters
-            if 'exptime' not in req or float(req['exptime']) <= 0:
+            if 'exptime' not in req or 3600 < float(req['exptime']) <= 0:
                 return {'message': 'Invalid or missing exposure time.', 'status': 2}
             if 'exptype' not in req or req['exptype'] not in ['Single', 'Real Time', 'Series']:
                 return {'message': 'Invalid or missing exposure type', 'status': 2}
