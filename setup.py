@@ -66,7 +66,7 @@ setup(
         "gunicorn>=20.1.0",
         "flask_cors",
         "matplotlib",
-        "sep",
+        "sep-pjw",
         "photutils",
         "astrometry; platform_system != 'Windows'"
     ],
