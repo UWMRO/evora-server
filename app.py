@@ -22,6 +22,7 @@ from flask import (
     send_from_directory,
 )
 from flask_cors import CORS
+from ambient_api.ambientapi import AmbientAPI
 
 from andor_routines import acquisition, activateCooling, deactivateCooling, startup
 from evora.debug import DEBUGGING
@@ -43,6 +44,8 @@ FILTER_DICT = {'Ha': 0, 'B': 1, 'V': 2, 'g': 3, 'r': 4, 'i': 5}
 FILTER_DICT_REVERSE = {0: 'Ha', 1: 'B', 2: 'V', 3: 'g', 4: 'r', 5: 'i'}
 
 DEFAULT_PATH = '/data/ecam'
+
+api = AmbientAPI()
 
 # If we're debugging, use a local directory instead - create if doesn't exist
 if DEBUGGING:
@@ -465,6 +468,15 @@ def create_app(test_config=None):
             payload['error'] = reply
         print(payload)
         return jsonify(payload)
+    
+    @app.route('/getWeatherData')
+    def route_get_weather_data():
+        devices = api.get_devices()
+        print(devices)
+        device = devices[0]
+        time.sleep(1)
+        data = device.last_data
+        return data
 
     return app
 
