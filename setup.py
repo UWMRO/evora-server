@@ -46,7 +46,7 @@ if sys.platform == "linux":  # The andor library is only available on Linux
         )
     ]
 
-# Works with Python 3.10.0
+# Works with Python 3.13.0
 setup(
     name="evora",
     version="0.2.2a0",

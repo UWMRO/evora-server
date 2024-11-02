@@ -40,15 +40,27 @@ flask --debug run --port 3000
 
 `evora-server` will save camera files to `/data/ecam/DATE` where `DATE` is in the format `20230504` and rotates at midnight UTC.
 
-If `/data/ecam` does not exist, create it with `mkdir -p` and make sure it has the right permissions for `evora-server` to write to it.
-
 **Note**: Mac OSx doesn't allow the creation of folders in the root `/` directory, since [OSx makes the root directory read-only by default](https://apple.stackexchange.com/questions/388236/unable-to-create-folder-in-root-of-macintosh-hd).
 
 ## Deploying for production
 
 The recommended way to run `evora-server` in production is by running the app with the Flask development server with a single process and threading. This allows for concurrent routes and asyncio to work (which is required for features such as aborting exposures). At this point this is preferred to using a UWSGI layer such as `gunicorn` since the camera has a single connection so we cannot run multiple workers.
 
-To run this command in the background as a systemd service, create a file `/etc/systemd/system/evora-server.service` with the contents
+First, make sure the `/data/ecam` directory exists with the proper user permissions
+
+```console
+sudo mkdir -p /data/ecam && sudo chown -R $USER /data
+```
+
+and that the Andor SDK is installed with
+
+```console
+ls /usr/local/lib/libandor.so
+```
+
+Try to run `standalone-start.sh` in the `evora-server` now. It should start downloading around ~20 GB of data for astrometry. Once this is done, you should see the server spin up (ignore the "This is a development server" warning). Test it with `curl localhost:8000/getStatus`.
+
+To run this command in the background as a user `systemd` service, create a file `/usr/lib/systemd/user/evora-server.service` with the contents
 
 ```ini
 [Unit]
@@ -59,15 +71,15 @@ WorkingDirectory=/home/mrouser/Github/evora-server
 ExecStart=/home/mrouser/Github/evora-server/standalone-start.sh
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
 ```
 
-Here we are pointing to the file `standalone-start.sh` in the repo, which loads the conda environment and starts the server in production mode (port 8000, threading, one worker). This may need to be changed for a location other than MRO. Then start the systemd service with
+Change `WorkingDirectory` and `ExecStart` to the download location of `evora-server`, then run the following commands to get it to run at system start.
 
 ```console
-sudo systemctl daemon-reload
-sudo systemctl enable --now enable evora-server
-sudo systemctl restart evora-server
+systemctl --user daemon-reload
+systemctl --user enable --now enable evora-server
+systemctl --user status evora-server
 ```
 
 ### Configuring nginx
