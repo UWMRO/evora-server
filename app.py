@@ -6,6 +6,7 @@ import os
 import sys
 import re
 import time
+import typing
 from datetime import datetime
 from glob import glob
 
@@ -166,7 +167,7 @@ def create_app(test_config=None):
     @app.route('/shutdown')
     def route_shutdown():
         deactivateCooling()  # same here
-        while andor.getStatusTEC()['temperature'] < -10:
+        while not DEBUGGING and andor.getStatusTEC()['temperature'] < -10:
             print('waiting to warm: ', andor.getStatusTEC()['temperature'])
             time.sleep(5)
         # We assume the fan should always be on. Testing to turn it off did not work.
@@ -184,7 +185,13 @@ def create_app(test_config=None):
             req = request.get_json(force=True)
 
             try:
+                valid_range: dict = andor.getRangeTEC()
                 req_temperature = int(req['temperature'])
+                if req_temperature < valid_range['min'] or req_temperature > valid_range['max']:
+                    app.logger.info(
+                        f'Setting temperature to: {req_temperature:.2f} [C] is out of range. Must be between {valid_range["min"]} and {valid_range["max"]}'
+                    )
+                    return str(-999)  # indicates tempreature was out of range
                 app.logger.info(f'Setting temperature to: {req_temperature:.2f} [C]')
                 andor.setTargetTEC(req_temperature)
             except ValueError:
@@ -218,12 +225,26 @@ def create_app(test_config=None):
         if request.method == 'POST':
             req = request.get_json(force=True)
             req = json.loads(req)
+
+            # validate parameters
+            if 'exptime' not in req or 3600 < float(req['exptime']) <= 0:
+                return {'message': 'Invalid or missing exposure time.', 'status': 2}
+            if 'exptype' not in req or req['exptype'] not in ['Single', 'Real Time', 'Series']:
+                return {'message': 'Invalid or missing exposure type', 'status': 2}
+            if 'imgtype' not in req or req['imgtype'] not in ['Bias', 'Dark', 'Flat', 'Object']:
+                return {'message': 'Invalid or missing image type.', 'status': 2}
+            if 'filtype' not in req or req['filtype'] not in FILTER_DICT:
+                return {'message': 'Invalid or missing filter type.', 'status': 2}
+            if 'comment' not in req:
+                return {'message': 'Missing comment.', 'status': 2}
+            
+
             dim = andor.getDetector()['dimensions']
 
             # check if acquisition is already in progress
             status = andor.getStatus()
             if status['status'] == 20072:
-                return {'message': str('Acquisition already in progress.'), 'status': 2}
+                return {'message': 'Acquisition already in progress.', 'status': 2}
 
             # handle img type
             if req['imgtype'] == 'Bias' or req['imgtype'] == 'Dark':
