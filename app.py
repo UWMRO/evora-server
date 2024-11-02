@@ -472,7 +472,6 @@ def create_app(test_config=None):
     @app.route('/getWeatherData')
     def route_get_weather_data():
         devices = api.get_devices()
-        print(devices)
         device = devices[0]
         time.sleep(1)
         data = device.last_data
