@@ -16,10 +16,13 @@ from app import app
 from framing.framing_assist import extract_sources, plot_sources, solve_fits
 from framing.models import PlateSolvingResult
 
+from evora.debug import DEBUGGING
+
 @app.route('/api/plate_solve', methods=['POST'])
 def plate_solve():
     payload = request.get_json()
     file_path = payload['filename']
 
-    res = solve_fits(file_path)
-    return jsonify(res.__dict__)
+    if not DEBUGGING:
+        res = solve_fits(file_path)
+        return jsonify(res.__dict__)
