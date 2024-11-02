@@ -67,3 +67,4 @@ for exposedName in dir(wrapper):
 # edge cases
 globals()["getStatus"] = getattr(wrapper, "getStatus")
 globals()["getStatusTEC"] = getattr(wrapper, "getStatusTEC")
+globals()["getRangeTEC"] = getattr(wrapper, "getRangeTEC")
