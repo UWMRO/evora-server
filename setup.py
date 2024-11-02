@@ -51,7 +51,7 @@ ext_modules = [
     )
 ]
 
-# Works with Python 3.10.0 - numpy.dtype sizes changes with 2, causing issues with sep
+# Works with Python 3.13.0
 setup(
     name="evora",
     version="0.2.2a0",
@@ -59,7 +59,7 @@ setup(
     author="Astronomy Undergraduate Engineering Group",
     setup_requires=["pybind11"],
     install_requires=[
-        "numpy<2",
+        "numpy",
         "astropy>=4.0",
         "pillow",
         "flask[async]",
