@@ -28,28 +28,23 @@ extra_link_args = ["-Wl,-rpath,."]
 
 includes = [getPybindInclude(), getPybindInclude(user=True)]
 
-if sys.platform == "darwin":
-    warnings.warn(
-        "macOS is not supported. Compiling the module will likely fail.",
-        UserWarning,
-    )
+ext_modules = []
 
+if sys.platform == "linux":  # The andor library is only available on Linux
+    root_path = os.path.dirname(__file__)
+    ANDOR_WRAPPER_PATH = root_path + "/evora/andor_wrapper.cpp"
 
-root_path = os.path.dirname(__file__)
-ANDOR_WRAPPER_PATH = root_path + "/evora/andor_wrapper.cpp"
-
-
-ext_modules = [
-    Extension(
-        "evora.andor_wrapper",
-        sources=[ANDOR_WRAPPER_PATH],
-        libraries=["andor"],
-        include_dirs=includes,
-        extra_compile_args=extra_compile_args,
-        extra_link_args=extra_link_args,
-        optional=True,
-    )
-]
+    ext_modules = [
+        Extension(
+            "evora.andor_wrapper",
+            sources=[ANDOR_WRAPPER_PATH],
+            libraries=["andor"],
+            include_dirs=includes,
+            extra_compile_args=extra_compile_args,
+            extra_link_args=extra_link_args,
+            optional=True,
+        )
+    ]
 
 # Works with Python 3.10.0
 setup(
