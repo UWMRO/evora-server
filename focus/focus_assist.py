@@ -5,7 +5,7 @@ matplotlib.use('Agg')  # turn off gui
 
 from astropy.io import fits
 import io
-import sep
+import sep_pjw as sep
 from .settings import SEP_MIN_AREA
 import logging
 

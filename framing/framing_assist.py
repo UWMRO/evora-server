@@ -1,11 +1,13 @@
 import astrometry
 import itertools    
 from astropy.io import fits
-import sep
+import sep_pjw as sep
 import numpy as np
 import time
 from .models import PlateSolvingResult, PlateSolvingResultStatus
 from .settings import MAX_SOURCES, CACHE_DIR
+
+from evora.debug import DEBUGGING
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -17,13 +19,16 @@ def logodds_callback(logodds_list: list[float]) -> astrometry.Action:
         return astrometry.Action.STOP
     return astrometry.Action.CONTINUE
 
-
-solver = astrometry.Solver(
-    astrometry.series_5200.index_files(
-        cache_directory=CACHE_DIR,
-        scales={0,3},
+if not DEBUGGING:
+    # Only download astrometry data if we're on production
+    solver = astrometry.Solver(
+        astrometry.series_5200.index_files(
+            cache_directory=CACHE_DIR,
+            scales={0,3},
+        )
     )
-)
+else:
+    solver = None
 
 
 def extract_sources(data):
@@ -104,7 +109,7 @@ def solve_fits(file_path, position_hint=None) -> PlateSolvingResult:
         data = data.astype(np.float32)
 
         stars_xy = extract_sources(data)
-        # plot_sources(data, stars_xy)   
+        # plot_sources(data, stars_xy)
         solution = solve(solver, stars_xy, position_hint=position_hint)
         
         if not solution.has_match():
