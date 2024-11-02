@@ -93,6 +93,7 @@ class Dummy:
 
     @classmethod
     def initialize(cls, directory=""):
+        time.sleep(1)
         cls.initialized = True
         return DRV_SUCCESS
 
@@ -111,6 +112,10 @@ class Dummy:
                 return {"min": -999.0, "max": -999.0, "status": DRV_ACQUIRING}
         else:
             return {"min": -999.0, "max": -999.0, "status": DRV_NOT_INITIALIZED}
+    
+    @classmethod
+    def getRangeTEC(cls):
+        return cls.getTemperatureRange()
 
     # Acquisition
     @classmethod
@@ -284,6 +289,7 @@ class Dummy:
     @classmethod
     def shutdown(cls):
         if not cls.acquiring:
+            time.sleep(1)
             cls.initialized = False
             cls.acquiring = False
             return DRV_SUCCESS
