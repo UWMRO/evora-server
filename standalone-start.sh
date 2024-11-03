@@ -17,6 +17,9 @@ if ! [ -d ".venv" ]; then
 else
     # start the venv
     source .venv/bin/activate
+
+    # refresh + recompile our packages in case of updates
+    pip install .
 fi
 
 # Runs the camera server as a single worker without threading.
