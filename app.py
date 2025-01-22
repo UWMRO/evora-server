@@ -210,7 +210,15 @@ def create_app(test_config=None):
     def route_testLongExposure():
         acquisition((1024, 1024), exposure_time=10)
         return str('Finished Acquiring after 10s')
+    
+    @app.route('/getFocus')
+    def route_getFocus():
+        return jsonify({'message':'Not implemented'})
 
+    @app.route('/setFocus')
+    def route_setFocus():
+        return jsonify({'message':'Not implemented'})
+    
     @app.route("/capture", methods=["POST"])
     async def route_capture():
         '''
