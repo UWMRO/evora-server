@@ -213,13 +213,20 @@ def create_app(test_config=None):
     
     @app.route('/getFocus')
     def route_getFocus():
-        return jsonify({'message':'Not implemented'})
+        return jsonify({'focus': DUMMY_FOCUS_POSITION if DEBUGGING else '0'})
 
     @app.route('/setFocus')
     def route_setFocus():
-        return jsonify({'message':'Not implemented'})
+        global DUMMY_FOCUS_POSITION
+        if DEBUGGING:
+            try:
+                DUMMY_FOCUS_POSITION = int(request.json.get('focus'))
+                return jsonify({'focus': DUMMY_FOCUS_POSITION})
+            except (TypeError, ValueError):
+                return jsonify({'error': 'Invalid focus value. Must be a number.'})
+        return jsonify({'message': 'Done!'})
     
-    @app.route("/capture", methods=["POST"])
+    @app.route("/capture", methods=["POST"]) 
     async def route_capture():
         '''
         Attempts to take a picture with the camera. Uses the 'POST' method
