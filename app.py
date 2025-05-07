@@ -1,4 +1,5 @@
 import asyncio
+import aiohttp
 import atexit
 import json
 import logging
@@ -140,6 +141,35 @@ async def send_to_wheel(command: str):
 
     return status, reply
 
+
+async def send_to_focus_server(endpoint: str):
+    '''Sends a request to the focus server at endpoint.
+
+    Parameters
+    ----------
+    endpoint
+        The endpoint to send the request to. ex: 'api/status'
+
+    Returns
+    -------
+    A dictionary with the response from the focus server.
+    If an error occurs, it will contain an 'error' key with the error message.
+    Otherwise, it will contain the response data.
+    '''
+
+    IP = '127.0.0.1'
+    PORT = 5000
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"http://{IP}:{PORT}/{endpoint}") as resp:
+            if resp.status != 200:
+                logging.error(f"Error: HTTP Request failed with code {resp.status} - {await resp.text()}")
+                return {"error": "HTTP Request failed"}
+            try:
+                return await resp.json(content_type=None)
+            except Exception as e:
+                logging.error(f"Error: Failed to parse JSON response - {e}")
+                return {"error": "Failed to parse JSON response"}
 
 def create_app(test_config=None):
     # create and configure the app
@@ -499,6 +529,31 @@ def create_app(test_config=None):
         data = device.last_data
         return data
 
+    @app.route('/focusStatus')
+    async def route_focus_status():
+        resp = await send_to_focus_server('api/status')
+        print(resp)
+        if 'error' in resp:
+            return jsonify({'error': resp['error']})
+        else:
+            return resp
+    
+    @app.route('/focusMoveSteps')
+    async def route_focus_move():
+        resp = await send_to_focus_server(f"api/move?steps={request.args.get('steps', 0)}")
+        if 'error' in resp:
+            return jsonify({'error': resp['error']})
+        else:
+            return resp
+    
+    @app.route('/focusAbort')
+    async def route_focus_abort():
+        resp = await send_to_focus_server('api/abort')
+        if 'error' in resp:
+            return jsonify({'error': resp['error']})
+        else:
+            return resp
+
     return app
 
 
@@ -515,8 +570,8 @@ if sys.platform != 'win32':
   import framing
   framing.register_blueprint(app)
 
-import focus
-focus.register_blueprint(app)
+  import focus
+  focus.register_blueprint(app)
 
 if __name__ == '__main__':
     # TO RUN IN PRODUCTION, USE:

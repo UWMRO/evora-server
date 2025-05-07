@@ -65,7 +65,8 @@ setup(
         "photutils",
         "astrometry; platform_system != 'Windows'",
         "ambient_api",
-        "python-dotenv"
+        "python-dotenv",
+        "aiohttp"
     ],
     packages=find_packages(exclude=("tests*")),
     ext_modules=ext_modules,
