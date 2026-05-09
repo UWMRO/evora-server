@@ -1,3 +1,4 @@
+import os
 import sys
 import warnings
 
@@ -31,12 +32,17 @@ includes = [getPybindInclude(), getPybindInclude(user=True)]
 
 ext_modules = []
 
+IS_DEBUG = os.getenv("EVORA_SERVER_DEBUG", "0").lower() in ("1", "true", "yes")
 
-if sys.platform != "linux":
+if IS_DEBUG:
+    warnings.warn("EVORA_SERVER_DEBUG is set. Not building the wrapper.")
+
+elif sys.platform != "linux":
     warnings.warn(
         "Andor wrapper is only supported on Linux. "
         "Skipping compilation of the Andor wrapper."
     )
+
 else:
     ANDOR_WRAPPER_PATH = "src/evora_server/cpp/andor_wrapper.cpp"
 
