@@ -1,0 +1,95 @@
+[project]
+name = "evora-server"
+version = "2.0.0a0"
+description = "REST API for the MRO Evora camera"
+license = { text = "BSD-3-Clause" }
+readme = "README.md"
+requires-python = ">=3.12,<4"
+
+dependencies = [
+    "fastapi[standard]>=0.112.0",
+    "gunicorn>=22.0.0",
+    "uvicorn[standard]>=0.24.0",
+    "astropy>=6.0.0",
+    "httpx>=0.27.2",
+    "setuptools>=82.0.1",
+    "ambient-api>=1.5.7",
+]
+
+[project.urls]
+Homepage = "https://github.com/uwmro/evora-server"
+Repository = "https://github.com/uwmro/evora-server"
+Documentation = "https://github.com/uwmro/evora-server"
+
+[dependency-groups]
+dev = [
+    "ipython>=8.0.0",
+    "ipdb>=0.12.3",
+    "ruff>=0.5.0",
+    "poethepoet>=0.24.2",
+    "pytest>=8.3.4",
+    "pytest-sugar>=1.0.0",
+    "pytest-cov>=6.0.0",
+    "pytest-asyncio>=0.25.0",
+    "ty>=0.0.34",
+]
+
+[tool.uv]
+package = true
+default-groups = ["dev"]
+
+[tool.poe.tasks.dev]
+shell = "fastapi dev --host 0.0.0.0 --port $port --reload src/evora_server/app.py"
+env.EVORA_SERVER_DEBUG = "1"
+args = [
+  { name = "port", default = "8888" }
+]
+deps = []
+
+[tool.ruff]
+line-length = 88
+target-version = 'py314'
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+unfixable = ["F841"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F403", "E402"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["evora_server"]
+lines-after-imports = 2
+section-order = ["future", "standard-library", "typing", "third-party", "first-party", "local-folder"]
+
+[tool.ruff.lint.isort.sections]
+typing = ["typing"]
+
+[tool.pytest.ini_options]
+addopts = "--cov evora_server --cov-report xml --cov-report html --cov-report term -W ignore"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.coverage.run]
+branch = true
+include = ["src/evora_server/*"]
+omit = [
+    "*/__init__.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "if TYPE_CHECKING:",
+    "# pragma: no cover"
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["evora_server*"]
+
+[tool.uv.extra-build-dependencies]
+evora_server = ["pybind11"]
