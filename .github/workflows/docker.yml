@@ -22,6 +22,8 @@ jobs:
       APP: evora-server
 
     steps:
+      - uses: actions/checkout@v6
+
       - name: Download SDK zip file
         run: |
           curl -L -o andor.zip ${{ secrets.ANDOR_SDK_LINK }}
@@ -75,6 +77,7 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v6
         with:
+          context: .
           push: true
           provenance: false
           tags: ghcr.io/${{ steps.set-tags.outputs.TAGS }}
