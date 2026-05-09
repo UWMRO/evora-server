@@ -19,6 +19,11 @@ jobs:
 
       - run: |
           curl -L -o andor.zip ${{ secrets.ANDOR_SDK_LINK }}
+
+      - run: |
+          ls -la
+
+      - run: |
           rm -Rf andor
           unzip andor.zip -d andor_tmp
           mv andor_tmp/andor ./
