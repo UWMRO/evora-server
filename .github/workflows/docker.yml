@@ -18,10 +18,11 @@ jobs:
       - uses: actions/checkout@v6
 
       - run: |
-          curl -L -o andor.zip ${{ secrets.ANDOR_SDK_LINK }} && \
-          rm -Rf andor && \
-          unzip andor.zip -d andor  && \
-          rm andor.zip
+          curl -L -o andor.zip ${{ secrets.ANDOR_SDK_LINK }}
+          rm -Rf andor
+          unzip andor.zip -d andor_tmp
+          mv andor_tmp/andor ./
+          rm -Rf andor.zip andor_tmp
 
   docker:
     name: Docker
