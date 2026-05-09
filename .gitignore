@@ -142,3 +142,5 @@ andor/
 
 # Skip the deprecated code
 deprecated/
+
+.vscode/

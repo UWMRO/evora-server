@@ -156,10 +156,8 @@ async def take_exposure(
 
     andor_wrapper.startAcquisition()
 
-    # Wait for acquisition to finish. Check for abort lock every half second..
+    # Wait for acquisition to finish. Check for abort lock every tenth of a second..
     while True:
-        status = andor_wrapper.getStatus()["status"]
-
         if abort_lock_path.exists():
             logger.warning("Abort lock found, stopping acquisition.")
             andor_wrapper.abortAcquisition()
@@ -172,21 +170,28 @@ async def take_exposure(
 
         now = time.time()
         elapsed = now - start_time
+
+        # Check that acquisition finished successfully.
+        status = andor_wrapper.getStatus()
+        if status["status"] == config.DRV_IDLE:
+            break
+
+        # If the status is stuck in acquiring for more than exposure_time + 5 seconds,
+        # something likely went wrong, so abort and raise an error.
+        if elapsed > exposure_time + 5:
+            raise HTTPException(
+                status_code=500,
+                detail="Timed out waiting for camera to finish acquisition. "
+                f"Status: {status}.",
+            )
+
         if elapsed >= exposure_time:
             break
 
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0.1)
 
     # Wait a bit longer for good measure.
-    await asyncio.sleep(0.5)
-
-    # Check that acquisition finished successfully.
-    status = andor_wrapper.getStatus()
-    if status["status"] != config.DRV_IDLE:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Exposure did not finish successfully. Status: {status}.",
-        )
+    await asyncio.sleep(5)
 
     # Grab the buffer from the camera as a numpy array.
     data = andor_wrapper.getAcquiredData(dim)

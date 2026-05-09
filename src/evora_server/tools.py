@@ -17,7 +17,7 @@ from astropy.io import fits
 from astropy.time import Time
 from fastapi import HTTPException
 
-from evora_server import andor_wrapper
+from evora_server import andor_wrapper, logger
 from evora_server.config import DATA_PATH, DRV_NOT_INITIALIZED
 from evora_server.filter_wheel import get_filter
 from evora_server.focus import get_focus
@@ -61,7 +61,11 @@ async def create_hdul(
     filter_ = await get_filter()
 
     # Get focus position.
-    focus = await get_focus()
+    try:
+        focus = await get_focus()
+    except Exception as err:
+        focus = None
+        logger.warning(f"Failed to get focus position: {err}")
 
     # Convert start time to ISO format.
     date_obs = Time(start_time, format="unix")
