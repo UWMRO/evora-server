@@ -17,17 +17,20 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - run: |
+      - name: Download SDK zip file
+        run: |
           curl -L -o andor.zip ${{ secrets.ANDOR_SDK_LINK }}
 
-      - run: |
-          ls -la
-
-      - run: |
+      - name: Extract SDK
+        run: |
           rm -Rf andor
           unzip andor.zip -d andor_tmp
           mv andor_tmp/andor ./
           rm -Rf andor.zip andor_tmp
+
+      - name: List files
+        run: |
+          ls
 
   docker:
     name: Docker
