@@ -39,6 +39,10 @@ jobs:
         run: |
           ls
 
+      - name: List Andor SDK files
+        run: |
+          ls andor
+
       - name: Set docker tags
         id: set-tags
         run: |
