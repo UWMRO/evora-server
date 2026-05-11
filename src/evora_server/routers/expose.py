@@ -222,6 +222,8 @@ async def take_exposure(
     image_path.parent.mkdir(parents=True, exist_ok=True)
     hdul.writeto(image_path, overwrite=(exposure_type == "real time"))
 
+    config.last_exposure_path = image_path
+
     return ExposureResponseModel(
         filename=image_path.name,
         path=str(image_path),

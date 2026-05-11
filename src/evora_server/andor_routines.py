@@ -9,8 +9,7 @@ from __future__ import annotations
 
 import time
 
-
-DRV_SUCCESS = 20002
+from evora_server import config
 
 
 def startup(andor_wrapper):
@@ -39,7 +38,7 @@ def startup(andor_wrapper):
     andor_wrapper.setShutter(1, 0, 50, 50)
     andor_wrapper.setImage(1, 1, 1, image_dimensions[0], 1, image_dimensions[1])
 
-    return {"dimensions": image_dimensions, "status": DRV_SUCCESS}
+    return {"dimensions": image_dimensions, "status": config.DRV_SUCCESS}
 
 
 def activateCooling(andor_wrapper, target_temperature=-10):
@@ -63,57 +62,75 @@ def activateCooling(andor_wrapper, target_temperature=-10):
     andor_wrapper.coolerOn()
     andor_wrapper.setTargetTEC(target_temperature)
 
-    return DRV_SUCCESS
+    return config.DRV_SUCCESS
 
 
 def deactivateCooling(andor_wrapper, fan_mode_high=False):
     """Deactivates the camera cooling system.
 
-    Parameters:
+    Parameters
+    ----------
     andor_wrapper
         The Andor wrapper instance.
     fan_mode_high
-        Whether the fan mode should be set to high
+        Whether the fan mode should be set to high.
 
-    Returns:
-    - DRV_SUCCESS: success
+    Returns
+    -------
+    status
+        Status code returned by the Andor camera.
+
     """
-    andor_wrapper.coolerOff()
-    # andor_wrapper.setFanMode(0 if fan_mode_high else 1)
 
-    return DRV_SUCCESS
+    andor_wrapper.coolerOff()
+    andor_wrapper.setFanMode(0 if fan_mode_high else 1)
+
+    return config.DRV_SUCCESS
 
 
 def acquisition(andor_wrapper, dim, exposure_time=0.1):
-    """
-    Acquires an image with the given dimensions and exposure time.
+    """Acquires an image with the given dimensions and exposure time.
 
-    Parameters:
-    - dim: tuple of the image dimensions
+    Parameters
+    ----------
+    dim
+        Tuple of the image dimensions.
+    exposure_time
+        The exposure time for the image acquisition.
 
-    Returns:
-    - data: the acquired image data
+    Returns
+    -------
+    data
+        The acquired image data
+
     """
+
     andor_wrapper.setExposureTime(exposure_time)
     andor_wrapper.startAcquisition()
 
     time.sleep(exposure_time + 0.5)
-    # while (camera_status == 20072):
-    #     camera_status = andor_wrapper.getStatus()
 
-    return {"data": andor_wrapper.getAcquiredData(dim)["data"], "status": DRV_SUCCESS}
+    return {
+        "data": andor_wrapper.getAcquiredData(dim)["data"],
+        "status": config.DRV_SUCCESS,
+    }
 
 
 def acquireBias(andor_wrapper, dim):
-    """
-    Acquires a bias image.
+    """Acquires a bias image.
 
-    Parameters:
-    - dim: tuple of the image dimensions
+    Parameters
+    ----------
+    dim
+        Tuple of the image dimensions.
 
-    Returns:
-    - image: the acquired bias image
+    Returns
+    -------
+    image
+        The acquired bias image.
+
     """
+
     andor_wrapper.setShutter(1, 2, 50, 50)
     andor_wrapper.setImage(1, 1, 1, dim[0], 1, dim[1])
 

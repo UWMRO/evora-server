@@ -12,6 +12,7 @@ import os
 import sys
 from importlib.metadata import version
 
+from evora_server.config import Config
 from evora_server.mock import AndorWrapperMocker
 
 
@@ -40,5 +41,7 @@ else:
         )
 
 logger = logging.getLogger("uvicorn.error")
+
+config = Config()
 
 __version__ = version("evora-server")

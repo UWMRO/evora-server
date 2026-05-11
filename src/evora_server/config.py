@@ -8,45 +8,53 @@
 from __future__ import annotations
 
 import os
+import pathlib
+from types import SimpleNamespace
 
 
-# Focus API URL.
-FOCUS_API_URL = os.environ.get("FOCUS_API_URL", "http://127.0.0.1/focus")
+class Config(SimpleNamespace):
+    """Configuration for the Evora server."""
 
-# TCS API URL.
-TCS_API_URL = os.environ.get("TCS_API_URL", "http://127.0.0.1/tcs")
+    # Focus API URL.
+    FOCUS_API_URL = os.environ.get("FOCUS_API_URL", "http://127.0.0.1/focus")
 
-# Data path
-DATA_PATH = "/data/ecam"
+    # TCS API URL.
+    TCS_API_URL = os.environ.get("TCS_API_URL", "http://127.0.0.1/tcs")
 
-# Status constants, taken from atmcdLXd.h
-DRV_SUCCESS = 20002
-DRV_TEMPERATURE_OFF = 20034
-DRV_TEMPERATURE_STABILIZED = 20036
-DRV_NOT_INITIALIZED = 20075
-DRV_ACQUIRING = 20072
-DRV_IDLE = 20073
+    # Data path
+    DATA_PATH = "/data/ecam"
 
-# Temperature limits.
-min_temp = -80.0
-max_temp = 50.0
+    # Status constants, taken from atmcdLXd.h
+    DRV_SUCCESS = 20002
+    DRV_TEMPERATURE_OFF = 20034
+    DRV_TEMPERATURE_STABILIZED = 20036
+    DRV_NOT_INITIALIZED = 20075
+    DRV_ACQUIRING = 20072
+    DRV_IDLE = 20073
 
-# Filter value to filter wheel position.
-FILTER_DICT = {
-    "Ha": 0,
-    "B": 1,
-    "V": 2,
-    "g": 3,
-    "r": 4,
-    "i": 5,
-}
+    # Temperature limits.
+    min_temp = -80.0
+    max_temp = 50.0
 
-# Reverse filter dictionary for position to filter name.
-FILTER_DICT_REVERSE = {
-    0: "Ha",
-    1: "B",
-    2: "V",
-    3: "g",
-    4: "r",
-    5: "i",
-}
+    # Filter value to filter wheel position.
+    FILTER_DICT = {
+        "Ha": 0,
+        "B": 1,
+        "V": 2,
+        "g": 3,
+        "r": 4,
+        "i": 5,
+    }
+
+    # Reverse filter dictionary for position to filter name.
+    FILTER_DICT_REVERSE = {
+        0: "Ha",
+        1: "B",
+        2: "V",
+        3: "g",
+        4: "r",
+        5: "i",
+    }
+
+    # Path to the last exposure taken.
+    last_exposure_path: pathlib.Path | None = None

@@ -12,8 +12,7 @@ from typing import Annotated
 import httpx
 from pydantic import BaseModel, Field
 
-from evora_server import IS_DEBUG, AndorWrapperMocker, andor_wrapper
-from evora_server.config import FOCUS_API_URL
+from evora_server import IS_DEBUG, AndorWrapperMocker, andor_wrapper, config
 
 
 __all__ = ["get_focus", "set_focus"]
@@ -57,7 +56,7 @@ async def get_focus() -> float:
         state = andor_wrapper.state
         return state.focus_position
 
-    async with httpx.AsyncClient(base_url=FOCUS_API_URL) as client:
+    async with httpx.AsyncClient(base_url=config.FOCUS_API_URL) as client:
         response = await client.get("/status")
         response.raise_for_status()
         data = response.json()
@@ -82,7 +81,7 @@ async def set_focus(position: float, absolute: bool = False) -> None:
 
     position = int(position)
 
-    async with httpx.AsyncClient(base_url=FOCUS_API_URL, timeout=60) as client:
+    async with httpx.AsyncClient(base_url=config.FOCUS_API_URL, timeout=60) as client:
         response = await client.get(f"/move/{position}")
         response.raise_for_status()
         data = response.json()

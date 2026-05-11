@@ -17,8 +17,7 @@ from astropy.io import fits
 from astropy.time import Time
 from fastapi import HTTPException
 
-from evora_server import IS_DEBUG, andor_wrapper, logger
-from evora_server.config import DATA_PATH, DRV_NOT_INITIALIZED
+from evora_server import IS_DEBUG, andor_wrapper, config, logger
 from evora_server.filter_wheel import get_filter
 from evora_server.focus import get_focus
 
@@ -31,7 +30,7 @@ def check_camera_initialized(error_type: Literal["runtime", "http"] = "http"):
 
     status = andor_wrapper.getStatus()["status"]
 
-    if status == DRV_NOT_INITIALIZED:
+    if status == config.DRV_NOT_INITIALIZED:
         if error_type == "runtime":
             raise RuntimeError("Camera is not initialized.")
         else:
@@ -51,7 +50,7 @@ async def create_hdul(
 
     # Check that the camera is initialized.
     status = andor_wrapper.getStatus()["status"]
-    if status == DRV_NOT_INITIALIZED:
+    if status == config.DRV_NOT_INITIALIZED:
         raise RuntimeError("Camera is not initialized.")
 
     # Get the camera temperature.
@@ -110,7 +109,7 @@ def get_exposure_path(filename: str | None = None) -> pathlib.Path:
 
     """
 
-    data_path = pathlib.Path(DATA_PATH)
+    data_path = pathlib.Path(config.DATA_PATH)
     default_image_name = "ecam-{seq:04d}.fits"
 
     date: str = Time.now().utc.isot.split("T")[0].replace("-", "")
