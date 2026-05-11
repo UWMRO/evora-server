@@ -191,7 +191,7 @@ async def take_exposure(
         await asyncio.sleep(0.1)
 
     # Wait a bit longer for good measure.
-    await asyncio.sleep(5)
+    await asyncio.sleep(0.5)
 
     # Grab the buffer from the camera as a numpy array.
     data = andor_wrapper.getAcquiredData(dim)
