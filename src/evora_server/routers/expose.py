@@ -237,3 +237,13 @@ async def abort_exposure() -> None:
 
     # Create the abort lock file.
     abort_lock_path.touch()
+
+
+@router.get("/last", summary="Returns the path of the last exposure taken.")
+async def get_last_exposure() -> str | None:
+    """Returns the path of the last exposure taken."""
+
+    if config.last_exposure_path is not None:
+        return str(config.last_exposure_path)
+    else:
+        return None
