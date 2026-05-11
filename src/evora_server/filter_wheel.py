@@ -59,28 +59,28 @@ async def get_filter() -> str:
         assert isinstance(andor_wrapper, AndorWrapperMocker)
         state = andor_wrapper.state
         fw_position = state.filter_position
-        return config.FILTER_DICT_REVERSE.get(fw_position, "Unknown")
+        return config.filter_dict_reverse.get(fw_position, "Unknown")
 
     status, reply = await send_to_wheel("get")
     if not status:
         raise RuntimeError(f"Failed to get filter wheel position. Error: {reply}")
 
     fw_position = int(reply)
-    return config.FILTER_DICT_REVERSE.get(fw_position, "Unknown")
+    return config.filter_dict_reverse.get(fw_position, "Unknown")
 
 
 async def set_filter(filter_name: str) -> None:
     """Sets the filter in the wheel."""
 
-    if filter_name not in config.FILTER_DICT:
+    if filter_name not in config.filter_dict:
         raise ValueError(f"Invalid filter name: {filter_name!r}.")
 
     if IS_DEBUG:
         assert isinstance(andor_wrapper, AndorWrapperMocker)
-        andor_wrapper.state.filter_position = config.FILTER_DICT[filter_name]
+        andor_wrapper.state.filter_position = config.filter_dict[filter_name]
         return
 
-    fw_position = config.FILTER_DICT[filter_name]
+    fw_position = config.filter_dict[filter_name]
     status, reply = await send_to_wheel(f"move {fw_position}")
 
     if not status:

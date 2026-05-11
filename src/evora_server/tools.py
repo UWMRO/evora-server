@@ -101,7 +101,7 @@ async def create_hdul(
 def get_exposure_path(filename: str | None = None) -> pathlib.Path:
     """Returns a valid file path for a camera exposure.
 
-    Crestes a sequential path for a new exposure. If ``filename`` is provided, the
+    Creates a sequential path for a new exposure. If ``filename`` is provided, the
     resulting path is of the form ``{DATA_PATH}/{date}/{filename}``. Otherwise,
     the path is of the form ``{DATA_PATH}/{date}/ecam-{seq:04d}.fits``, where
     ``seq`` is the next available sequence number for that date.
@@ -109,7 +109,7 @@ def get_exposure_path(filename: str | None = None) -> pathlib.Path:
 
     """
 
-    data_path = pathlib.Path(config.DATA_PATH)
+    data_path = pathlib.Path(config.data_path)
     default_image_name = "ecam-{seq:04d}.fits"
 
     date: str = Time.now().utc.isot.split("T")[0].replace("-", "")

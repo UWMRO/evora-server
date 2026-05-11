@@ -9,20 +9,21 @@ from __future__ import annotations
 
 import os
 import pathlib
-from types import SimpleNamespace
+from dataclasses import dataclass
 
 
-class Config(SimpleNamespace):
+@dataclass
+class Config:
     """Configuration for the Evora server."""
 
     # Focus API URL.
-    FOCUS_API_URL = os.environ.get("FOCUS_API_URL", "http://127.0.0.1/focus")
+    focus_api_url = os.environ.get("FOCUS_API_URL", "http://127.0.0.1/focus")
 
     # TCS API URL.
-    TCS_API_URL = os.environ.get("TCS_API_URL", "http://127.0.0.1/tcs")
+    tcs_api_url = os.environ.get("TCS_API_URL", "http://127.0.0.1/tcs")
 
     # Data path
-    DATA_PATH = "/data/ecam"
+    data_path = "/data/ecam"
 
     # Status constants, taken from atmcdLXd.h
     DRV_SUCCESS = 20002
@@ -37,7 +38,7 @@ class Config(SimpleNamespace):
     max_temp = 50.0
 
     # Filter value to filter wheel position.
-    FILTER_DICT = {
+    filter_dict = {
         "Ha": 0,
         "B": 1,
         "V": 2,
@@ -47,7 +48,7 @@ class Config(SimpleNamespace):
     }
 
     # Reverse filter dictionary for position to filter name.
-    FILTER_DICT_REVERSE = {
+    filter_dict_reverse = {
         0: "Ha",
         1: "B",
         2: "V",
