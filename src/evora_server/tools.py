@@ -17,7 +17,7 @@ from astropy.io import fits
 from astropy.time import Time
 from fastapi import HTTPException
 
-from evora_server import andor_wrapper, logger
+from evora_server import IS_DEBUG, andor_wrapper, logger
 from evora_server.config import DATA_PATH, DRV_NOT_INITIALIZED
 from evora_server.filter_wheel import get_filter
 from evora_server.focus import get_focus
@@ -90,6 +90,8 @@ async def create_hdul(
     header["FILTER"] = (filter_, "Filter name")
     header["CCD-TEMP"] = (round(temperature, 2), "CCD Temperature [C]")
     header["FOCUS"] = (focus, "Relative focus position [microns]")
+
+    header["TESTEXP"] = (IS_DEBUG, "Is this a test exposure taken in debug mode?")
 
     hdu = fits.PrimaryHDU(data=data, header=header)
     hdul = fits.HDUList([hdu])
