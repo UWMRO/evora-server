@@ -82,7 +82,7 @@ async def set_focus(position: float, absolute: bool = False) -> None:
 
     position = int(position)
 
-    async with httpx.AsyncClient(base_url=FOCUS_API_URL) as client:
+    async with httpx.AsyncClient(base_url=FOCUS_API_URL, timeout=60) as client:
         response = await client.get(f"/move/{position}")
         response.raise_for_status()
         data = response.json()
