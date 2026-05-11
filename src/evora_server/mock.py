@@ -1,6 +1,6 @@
 import threading
 import time
-from types import SimpleNamespace
+from dataclasses import dataclass
 
 from numpy import array
 from numpy.random import randint
@@ -11,7 +11,8 @@ from evora_server import config
 __all__ = ["AndorWrapperMocker"]
 
 
-class EvoraState(SimpleNamespace):
+@dataclass
+class EvoraState:
     """Class to hold the state of the mock Evora camera system."""
 
     # Camera params.
@@ -124,9 +125,9 @@ class AndorWrapperMocker:
         self.state.acquiring = True
 
         elapsed = 0.0
-        while (elapsed < self.state.exp_time) and not self.__thread_stop:
-            time.sleep(self.state.exp_time)
-            elapsed += self.state.exp_time
+        while (elapsed < self.state.exposure_time) and not self.__thread_stop:
+            time.sleep(self.state.exposure_time)
+            elapsed += self.state.exposure_time
 
         self.state.acquiring = False
 
@@ -262,7 +263,7 @@ class AndorWrapperMocker:
     def setExposureTime(self, exp_time):
         if self.state.initialized:
             if not self.state.acquiring:
-                self.state.exp_time = exp_time
+                self.state.exposure_time = exp_time
                 return config.DRV_SUCCESS
             else:
                 return config.DRV_ACQUIRING
