@@ -173,7 +173,8 @@ async def take_exposure(
 
         # Check that acquisition finished successfully.
         status = andor_wrapper.getStatus()
-        if status["status"] == config.DRV_IDLE:
+        idle = status["status"] == config.DRV_IDLE
+        if idle:
             break
 
         # If the status is stuck in acquiring for more than exposure_time + 5 seconds,
@@ -185,7 +186,7 @@ async def take_exposure(
                 f"Status: {status}.",
             )
 
-        if elapsed >= exposure_time:
+        if idle and elapsed >= exposure_time:
             break
 
         await asyncio.sleep(0.1)
@@ -226,3 +227,11 @@ async def take_exposure(
         path=str(image_path),
         success=True,
     )
+
+
+@router.get("/abort", summary="Aborts the current exposure.")
+async def abort_exposure() -> None:
+    """Aborts the current exposure."""
+
+    # Create the abort lock file.
+    abort_lock_path.touch()
