@@ -19,7 +19,7 @@ router = APIRouter(prefix="/focus", tags=["focus"])
 async def get_focus() -> float:
     """Gets the current focus position."""
 
-    from evora_server.focus import get_focus
+    from evora_server.tools.focus import get_focus
 
     try:
         return await get_focus()
@@ -40,7 +40,7 @@ async def move_focus(
 ) -> None:
     """Moves the focus position."""
 
-    from evora_server.focus import set_focus
+    from evora_server.tools.focus import set_focus
 
     try:
         await set_focus(position, absolute)

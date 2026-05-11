@@ -32,7 +32,10 @@ async def send_to_wheel(command: str) -> tuple[bool, str]:
 
     """
 
-    reader, writer = await asyncio.open_connection("72.233.250.84", 9999)
+    focus_wheel_ip = config.focus_wheel_ip
+    focus_wheel_port = config.focus_wheel_port
+
+    reader, writer = await asyncio.open_connection(focus_wheel_ip, focus_wheel_port)
     writer.write((command + "\n").encode())
     await writer.drain()
 

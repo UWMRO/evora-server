@@ -19,7 +19,7 @@ router = APIRouter(prefix="/filter", tags=["filter"])
 async def get_filter() -> str:
     """Gets the current filter in the wheel."""
 
-    from evora_server.filter_wheel import get_filter
+    from evora_server.tools.filter_wheel import get_filter
 
     try:
         return await get_filter()
@@ -33,7 +33,7 @@ async def set_filter(
 ) -> None:
     """Sets the filter in the wheel."""
 
-    from evora_server.filter_wheel import set_filter
+    from evora_server.tools.filter_wheel import set_filter
 
     try:
         await set_filter(filter_name)
@@ -45,7 +45,7 @@ async def set_filter(
 async def home_filter() -> None:
     """Homes the filter wheel."""
 
-    from evora_server.filter_wheel import home_wheel
+    from evora_server.tools.filter_wheel import home_wheel
 
     try:
         await home_wheel()

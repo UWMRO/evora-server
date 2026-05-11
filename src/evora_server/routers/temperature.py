@@ -14,7 +14,7 @@ from pydantic import BaseModel
 
 from evora_server import logger
 from evora_server.dependencies import AndorWrapper
-from evora_server.tools import check_camera_initialized
+from evora_server.tools.camera import check_camera_initialized
 
 
 router = APIRouter(prefix="/temperature", tags=["temperature"])

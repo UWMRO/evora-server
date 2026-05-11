@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # @Date: 2026-05-09
-# @Filename: tools.py
+# @Filename: fits.py
 # @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
 
 from __future__ import annotations
@@ -10,31 +10,17 @@ from __future__ import annotations
 import pathlib
 import re
 
-from typing import Literal
-
 import numpy
 from astropy.io import fits
 from astropy.time import Time
-from fastapi import HTTPException
 
 from evora_server import IS_DEBUG, andor_wrapper, config, logger
-from evora_server.filter_wheel import get_filter
-from evora_server.focus import get_focus
+from evora_server.tools.filter_wheel import get_filter
+from evora_server.tools.focus import get_focus
+from evora_server.tools.tcs import get_tcs_status
 
 
-__all__ = ["create_hdul", "get_exposure_path", "check_camera_initialized"]
-
-
-def check_camera_initialized(error_type: Literal["runtime", "http"] = "http"):
-    """Checks that the camera is initialized."""
-
-    status = andor_wrapper.getStatus()["status"]
-
-    if status == config.DRV_NOT_INITIALIZED:
-        if error_type == "runtime":
-            raise RuntimeError("Camera is not initialized.")
-        else:
-            raise HTTPException(status_code=500, detail="Camera is not initialized.")
+__all__ = ["create_hdul", "get_exposure_path"]
 
 
 async def create_hdul(
@@ -59,12 +45,20 @@ async def create_hdul(
     # Get filter wheel value.
     filter_ = await get_filter()
 
+    # Get TCS status.
+    try:
+        tcs_status = await get_tcs_status()
+        logger.info(f"TCS status: {tcs_status}")
+    except Exception as err:
+        logger.warning(f"Failed to get TCS status: {err}")
+        tcs_status = None
+
     # Get focus position.
     try:
         focus = await get_focus()
     except Exception as err:
-        focus = None
         logger.warning(f"Failed to get focus position: {err}")
+        focus = None
 
     # Convert start time to ISO format.
     date_obs = Time(start_time, format="unix")
@@ -89,6 +83,27 @@ async def create_hdul(
     header["FILTER"] = (filter_, "Filter name")
     header["CCD-TEMP"] = (round(temperature, 2), "CCD Temperature [C]")
     header["FOCUS"] = (focus, "Relative focus position [microns]")
+
+    if tcs_status:
+        ra = tcs_status.right_ascension * 15.0
+        dec = tcs_status.declination
+        alt = tcs_status.altitude
+        az = tcs_status.azimuth
+        airmass = tcs_status.air_mass
+
+        # Adjust JD and LST to the start of the exposure.
+        jd = tcs_status.scope_julian_day - float(exposure_time) / 86400.0
+        lst = tcs_status.scope_sidereal_time - float(exposure_time) / 3600.0
+    else:
+        ra = dec = alt = az = jd = lst = airmass = None
+
+    header["RA"] = (ra, "Telescops Right ascension [degrees]")
+    header["DEC"] = (dec, "Telescope Declination [degrees]")
+    header["ALT"] = (alt, "Telescope Altitude [degrees]")
+    header["AZ"] = (az, "Telescope Azimuth [degrees]")
+    header["AIRMASS"] = (airmass, "Telescope Airmass")
+    header["JD"] = (jd, "Julian day from TCS")
+    header["LST"] = (lst, "Local Sidereal Time from TCS")
 
     header["TESTEXP"] = (IS_DEBUG, "Is this a test exposure taken in debug mode?")
 

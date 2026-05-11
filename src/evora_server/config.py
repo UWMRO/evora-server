@@ -22,6 +22,10 @@ class Config:
     # TCS API URL.
     tcs_api_url = os.environ.get("TCS_API_URL", "http://127.0.0.1/tcs")
 
+    # Focus wheel IP and port.
+    focus_wheel_ip = os.environ.get("FOCUS_WHEEL_IP", "72.233.250.84")
+    focus_wheel_port = int(os.environ.get("FOCUS_WHEEL_PORT", "9999"))
+
     # Data path
     data_path = "/data/ecam"
 
