@@ -11,7 +11,7 @@ from fastapi import FastAPI
 
 from evora_server import __version__
 
-from .routers import expose, filter, initialize, status, temperature, weather
+from .routers import expose, filter, focus, initialize, status, temperature, weather
 
 
 app = FastAPI(
@@ -26,6 +26,7 @@ app.include_router(initialize.router)
 app.include_router(expose.router)
 app.include_router(filter.router)
 app.include_router(weather.router)
+app.include_router(focus.router)
 
 
 @app.get("/")

@@ -7,6 +7,17 @@
 
 from __future__ import annotations
 
+import os
+
+
+# Focus API URL.
+FOCUS_API_URL = os.environ.get("FOCUS_API_URL", "http://127.0.0.1/focus")
+
+# TCS API URL.
+TCS_API_URL = os.environ.get("TCS_API_URL", "http://127.0.0.1/tcs")
+
+# Data path
+DATA_PATH = "/data/ecam"
 
 # Status constants, taken from atmcdLXd.h
 DRV_SUCCESS = 20002
@@ -39,6 +50,3 @@ FILTER_DICT_REVERSE = {
     4: "r",
     5: "i",
 }
-
-# Data path
-DATA_PATH = "/data/ecam"
