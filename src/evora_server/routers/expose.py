@@ -19,6 +19,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from evora_server import config, logger
 from evora_server.dependencies import AndorWrapper
+from evora_server.filter_wheel import set_filter
 from evora_server.tools import check_camera_initialized, create_hdul, get_exposure_path
 
 
@@ -110,8 +111,9 @@ async def take_exposure(
 
     # Check that the filter is valid if provided
     if filter_ is not None:
-        if filter_ not in config.FILTER_DICT:
+        if filter_ not in config.filter_dict:
             raise HTTPException(status_code=400, detail=f"Invalid filter: {filter_!r}.")
+        await set_filter(filter_)
 
     # Clear the abort lock if it exists
     if abort_lock_path.exists():
