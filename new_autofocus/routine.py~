@@ -1,0 +1,118 @@
+from evora.debug import DEBUGGING
+
+if DEBUGGING:
+    from evora.dummy import Dummy as andor 
+else:
+    from evora import andor
+
+import asyncio
+import aiohttp
+import numpy as np
+import sep_pjw as sep
+import logging
+from andor_routines import acquisition
+from evora import andor
+from evora.debug import DEBUGGING
+
+# Default tinyfocus-server URL
+TINYFOCUS_URL = "http://127.0.0.1:5000"
+
+async def move_focuser(steps: int):
+    """Sends an HTTP command to the tinyfocus-server to move the motor."""
+    if DEBUGGING:
+        logging.info(f"[DEBUG] Mock moving focuser by {steps} steps")
+        return {"code": 200, "status": "mocked"}
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"{TINYFOCUS_URL}/api/move?steps={steps}") as resp:
+            if resp.status != 200:
+                raise RuntimeError(f"Focuser move failed with status {resp.status}")
+            return await resp.json()
+
+def measure_hfd(image_data):
+    """Calculates the mean HFD from the raw Andor image matrix."""
+    try:
+        data = image_data.astype(np.float64)
+        bkg = sep.Background(data)
+        data_sub = data - bkg
+        objects = sep.extract(data_sub, 3.0, err=bkg.globalrms)
+        
+        if len(objects) == 0:
+            return 99.0 
+            
+        flux, fluxerr, flag = sep.sum_circle(
+            data_sub, objects['x'], objects['y'], 
+            5.0, subpix=1, bkgann=(10.0, 15.0)
+        )
+        
+        top_indices = np.argsort(flux)[-15:] 
+        hfr_array, _ = sep.flux_radius(
+            data_sub, objects['x'][top_indices], objects['y'][top_indices], 
+            6.0 * objects['a'][top_indices], 0.5, normflux=flux[top_indices], subpix=5
+        )
+        
+        valid_hfr = [r for r in hfr_array if r > 0 and not np.isnan(r)]
+        if not valid_hfr:
+            return 99.0
+            
+        return np.mean(valid_hfr) * 2.0
+    except Exception as e:
+        logging.error(f"HFD Calculation error: {e}")
+        return 99.0
+
+async def run_v_curve(total_steps=20, step_size=10, exposure_time=1.0):
+    """Automated V-Curve routine."""
+    positions = []
+    hfds = []
+    
+    dim = (1024, 1024) if DEBUGGING else andor.getDetector()['dimensions']
+    
+    for step_num in range(total_steps):
+        result = acquisition(dim, exposure_time=exposure_time)
+        if result.get("status") != 20002:
+            logging.warning(f"Failed to acquire image at step {step_num}")
+            continue
+            
+        img_data = result["data"]
+        hfd = measure_hfd(img_data)
+        
+        positions.append(step_num * step_size)
+        hfds.append(hfd)
+        
+        if step_num < total_steps - 1:
+            await move_focuser(-step_size)
+            await asyncio.sleep(0.5) 
+            
+    valid_data = [(p, h) for p, h in zip(positions, hfds) if h < 90.0]
+    
+    if len(valid_data) < 3:
+        return {"status": "error", "message": "Not enough valid stars detected."}
+        
+    x = np.array([d[0] for d in valid_data])
+    y = np.array([d[1] for d in valid_data])
+    
+    coeffs = np.polyfit(x, y, 2)
+    a, b, c = coeffs
+    
+    if a > 0:
+        vertex_x = -b / (2 * a)
+        best_position = int(round(vertex_x))
+        max_position = (total_steps - 1) * step_size
+        best_position = max(0, min(best_position, max_position))
+        
+        current_position = max_position
+        steps_back = current_position - best_position
+        overshoot = step_size * 4 
+        total_out = steps_back + overshoot
+        
+        await move_focuser(total_out)
+        await asyncio.sleep(0.5)
+        await move_focuser(-overshoot)
+        
+        return {
+            "status": "success",
+            "best_position": best_position,
+            "curve_data": {"x": x.tolist(), "y": y.tolist(), "coeffs": coeffs.tolist()}
+        }
+    else:
+        return {"status": "error", "message": "Curve fit failed (no clear V-shape detected)."}
