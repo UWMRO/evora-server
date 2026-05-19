@@ -519,7 +519,7 @@ import focus
 focus.register_blueprint(app)
 
 import new_autofocus
-new_autofocus.register_blueprint(app)
+autofocus.register_blueprint(app)
 
 if __name__ == '__main__':
     # TO RUN IN PRODUCTION, USE:
