@@ -83,10 +83,10 @@ async def create_hdul(
 
     header["FILTER"] = (filter_, "Filter name")
     header["CCD-TEMP"] = (round(temperature, 2), "CCD Temperature [C]")
-    header["FOCUS"] = (focus, "Relative focus position [microns]")
+    header["FOCUS"] = (focus, "Relative focus position [steps]")
 
     if tcs_status:
-        ra = round(tcs_status.right_ascension * 15.0, 6)
+        ra = round(tcs_status.right_ascension, 6)
         dec = round(tcs_status.declination, 6)
         alt = round(tcs_status.altitude, 6)
         az = round(tcs_status.azimuth, 6)
@@ -99,7 +99,7 @@ async def create_hdul(
     else:
         ra = dec = alt = az = jd = lst = airmass = None
 
-    header["RA"] = (ra, "Telescops Right ascension [degrees]")
+    header["RA"] = (ra, "Telescops Right ascension [hours]")
     header["DEC"] = (dec, "Telescope Declination [degrees]")
     header["ALT"] = (alt, "Telescope Altitude [degrees]")
     header["AZ"] = (az, "Telescope Azimuth [degrees]")
