@@ -11,15 +11,15 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query
 
+from evora_server.tools.focus import FocusStatusModel, get_focus, set_focus
+
 
 router = APIRouter(prefix="/focus", tags=["focus"])
 
 
 @router.get("/", summary="Gets the current focus position.")
-async def get_focus() -> float:
+async def route_get_focus() -> FocusStatusModel:
     """Gets the current focus position."""
-
-    from evora_server.tools.focus import get_focus
 
     try:
         return await get_focus()
@@ -28,7 +28,7 @@ async def get_focus() -> float:
 
 
 @router.get("/move", summary="Moves the focus position.")
-async def move_focus(
+async def route_move_focus(
     position: Annotated[
         float,
         Query(description="The position to move the focus to."),
@@ -39,8 +39,6 @@ async def move_focus(
     ] = False,
 ) -> None:
     """Moves the focus position."""
-
-    from evora_server.tools.focus import set_focus
 
     try:
         await set_focus(position, absolute)

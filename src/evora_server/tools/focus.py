@@ -48,22 +48,27 @@ class FocusMoveModel(BaseModel):
     ]
 
 
-async def get_focus() -> float:
+async def get_focus() -> FocusStatusModel:
     """Returns the current focus position."""
 
     if IS_DEBUG:
         assert isinstance(andor_wrapper, AndorWrapperMocker)
         state = andor_wrapper.state
-        return state.focus_position
+        return FocusStatusModel(
+            error=False,
+            moving=False,
+            step=int(state.focus_position),
+            limit=False,
+        )
 
     async with httpx.AsyncClient(base_url=config.focus_api_url) as client:
         response = await client.get("/status")
         response.raise_for_status()
         data = response.json()
-        model = FocusStatusModel(**data)
+        model = FocusStatusModel(error=False, **data)
         if model.error:
             raise RuntimeError("Error getting focus status.")
-        return float(model.step)
+        return model
 
 
 async def set_focus(position: float, absolute: bool = False) -> None:
@@ -77,7 +82,7 @@ async def set_focus(position: float, absolute: bool = False) -> None:
 
     if absolute:
         current_position = await get_focus()
-        position = position - current_position
+        position = position - current_position.step
 
     position = int(position)
 

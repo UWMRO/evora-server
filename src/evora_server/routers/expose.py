@@ -212,7 +212,10 @@ async def take_exposure(
 
     # Get the image path.
     filename = "test.fits" if exposure_type == "real time" else None
-    image_path = get_exposure_path(filename=filename)
+    image_path = get_exposure_path(
+        filename=filename,
+        overwrite=(exposure_type == "real time"),
+    )
 
     # Create the HDUList and save the FITS file.
     hdul = await create_hdul(

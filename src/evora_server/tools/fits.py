@@ -55,7 +55,8 @@ async def create_hdul(
 
     # Get focus position.
     try:
-        focus = await get_focus()
+        focus_model = await get_focus()
+        focus = focus_model.step
     except Exception as err:
         logger.warning(f"Failed to get focus position: {err}")
         focus = None
@@ -85,15 +86,16 @@ async def create_hdul(
     header["FOCUS"] = (focus, "Relative focus position [microns]")
 
     if tcs_status:
-        ra = tcs_status.right_ascension * 15.0
-        dec = tcs_status.declination
-        alt = tcs_status.altitude
-        az = tcs_status.azimuth
-        airmass = tcs_status.air_mass
+        ra = round(tcs_status.right_ascension * 15.0, 6)
+        dec = round(tcs_status.declination, 6)
+        alt = round(tcs_status.altitude, 6)
+        az = round(tcs_status.azimuth, 6)
+        airmass = round(tcs_status.air_mass, 3)
 
         # Adjust JD and LST to the start of the exposure.
         jd = tcs_status.scope_julian_day - float(exposure_time) / 86400.0
         lst = tcs_status.scope_sidereal_time - float(exposure_time) / 3600.0
+        lst = round(lst, 6)
     else:
         ra = dec = alt = az = jd = lst = airmass = None
 
@@ -103,7 +105,7 @@ async def create_hdul(
     header["AZ"] = (az, "Telescope Azimuth [degrees]")
     header["AIRMASS"] = (airmass, "Telescope Airmass")
     header["JD"] = (jd, "Julian day from TCS")
-    header["LST"] = (lst, "Local Sidereal Time from TCS")
+    header["LST"] = (lst, "Local Sidereal Time from TCS [hours]")
 
     header["TESTEXP"] = (IS_DEBUG, "Is this a test exposure taken in debug mode?")
 
@@ -113,7 +115,10 @@ async def create_hdul(
     return hdul
 
 
-def get_exposure_path(filename: str | None = None) -> pathlib.Path:
+def get_exposure_path(
+    filename: str | None = None,
+    overwrite: bool = False,
+) -> pathlib.Path:
     """Returns a valid file path for a camera exposure.
 
     Creates a sequential path for a new exposure. If ``filename`` is provided, the
@@ -145,7 +150,9 @@ def get_exposure_path(filename: str | None = None) -> pathlib.Path:
             if match:
                 seq = int(match.group(1)) + 1
 
-    file_ = default_image_name.format(seq=seq)
+        file_ = default_image_name.format(seq=seq)
+    else:
+        file_ = filename
 
     # Ensure extension is .fits
     if file_[-1] == ".":
@@ -156,7 +163,7 @@ def get_exposure_path(filename: str | None = None) -> pathlib.Path:
     # Ensure nothing gets overwritten
     while True:
         file_path = parent_dir / file_
-        if not file_path.exists():
+        if not file_path.exists() or overwrite:
             break
         seq += 1
         file_ = default_image_name.format(seq=seq)

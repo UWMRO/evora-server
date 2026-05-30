@@ -37,13 +37,33 @@ class TemperatureRangeResponseModel(BaseModel):
     ]
 
 
+class TemperatureResponseModel(BaseModel):
+    """Model for the current temperature response."""
+
+    temperature: Annotated[
+        float,
+        "Current temperature of the camera.",
+    ]
+
+
+class SetTemperatureResponseModel(BaseModel):
+    """Model for the set temperature response."""
+
+    temperature: Annotated[
+        float,
+        "Target temperature that was set for the camera.",
+    ]
+
+
 @router.get("/", summary="Returns the current temperature of the camera.")
-async def get_temperature(andor_wrapper: AndorWrapper) -> float:
+async def get_temperature(andor_wrapper: AndorWrapper) -> TemperatureResponseModel:
     """Returns the current temperature of the camera."""
 
     check_camera_initialized()
 
-    return andor_wrapper.getStatusTEC()["temperature"]
+    return TemperatureResponseModel(
+        temperature=andor_wrapper.getStatusTEC()["temperature"]
+    )
 
 
 @router.get("/range", summary="Returns the valid temperature range of the camera.")
@@ -59,7 +79,7 @@ async def get_temperature_range(
 async def set_temperature(
     andor_wrapper: AndorWrapper,
     temperature: Annotated[float, Query(description="Target temperature")],
-) -> float:
+) -> SetTemperatureResponseModel:
     """Sets the target temperature of the camera."""
 
     check_camera_initialized()
@@ -77,8 +97,9 @@ async def set_temperature(
         logger.error(error)
         raise HTTPException(status_code=400, detail=(error))
 
-    logger.info(f"Setting target temperature to: {temperature:.2f} C")
+    temperature = int(temperature)
+    logger.info(f"Setting target temperature to: {temperature} C")
 
     andor_wrapper.setTargetTEC(temperature)
 
-    return temperature
+    return SetTemperatureResponseModel(temperature=temperature)

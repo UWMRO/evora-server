@@ -64,4 +64,4 @@ async def get_shutdown_camera(andor_wrapper: AndorWrapper) -> ShutdownResponseMo
     deactivateCooling(andor_wrapper)
     status = andor_wrapper.shutdown()
 
-    return ShutdownResponseModel(**status)
+    return ShutdownResponseModel(status=status)

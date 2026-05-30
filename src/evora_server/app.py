@@ -12,10 +12,20 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from evora_server import IS_DEBUG, __version__, logger
 
-from .routers import expose, filter, focus, initialize, status, temperature, weather
+from .routers import (
+    expose,
+    filter,
+    focus,
+    initialize,
+    status,
+    telescope,
+    temperature,
+    weather,
+)
 
 
 @asynccontextmanager
@@ -44,6 +54,15 @@ app.include_router(expose.router)
 app.include_router(filter.router)
 app.include_router(weather.router)
 app.include_router(focus.router)
+app.include_router(telescope.router)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")

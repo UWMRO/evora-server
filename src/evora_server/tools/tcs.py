@@ -15,10 +15,10 @@ from pydantic import BaseModel, Field
 from evora_server import config
 
 
-__all__ = ["StatusResponse", "get_tcs_status"]
+__all__ = ["TCSStatusResponse", "get_tcs_status"]
 
 
-class StatusResponse(BaseModel):
+class TCSStatusResponse(BaseModel):
     """Response model for the status endpoint."""
 
     bool_params: Annotated[
@@ -71,7 +71,7 @@ class StatusResponse(BaseModel):
     ]
 
 
-async def get_tcs_status() -> StatusResponse:
+async def get_tcs_status() -> TCSStatusResponse:
     """Gets the current status of the telescope."""
 
     async with httpx.AsyncClient() as client:
@@ -79,4 +79,4 @@ async def get_tcs_status() -> StatusResponse:
         response.raise_for_status()
         data = response.json()
 
-    return StatusResponse(**data)
+    return TCSStatusResponse(**data)
