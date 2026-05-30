@@ -7,17 +7,34 @@
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+
+from typing import AsyncIterator
+
 from fastapi import FastAPI
 
-from evora_server import __version__
+from evora_server import IS_DEBUG, __version__, logger
 
 from .routers import expose, filter, focus, initialize, status, temperature, weather
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    """Lifespan function for the FastAPI app."""
+
+    if not IS_DEBUG:
+        logger.warning("Using the real Andor camera.")
+    else:
+        logger.warning("Using the **mock** Andor wrapper.")
+
+    yield
 
 
 app = FastAPI(
     version=__version__,
     title="Evora Server",
     description="API for the Evora camera control server.",
+    lifespan=lifespan,
 )
 
 app.include_router(status.router)

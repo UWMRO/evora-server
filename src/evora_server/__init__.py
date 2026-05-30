@@ -12,17 +12,21 @@ import os
 import sys
 from importlib.metadata import version
 
-from evora_server.config import Config
-from evora_server.mock import AndorWrapperMocker
+from evora_server._config import Config
 
 
-__all__ = ["IS_DEBUG", "andor_wrapper", "__version__"]
+__all__ = ["IS_DEBUG", "andor_wrapper", "__version__", "config", "logger"]
+
+
+config = Config()
 
 # Are we in debug mode?
 IS_DEBUG = os.getenv("EVORA_SERVER_DEBUG", "0").lower() in ("1", "true", "yes")
 
 # Decide whether to provide the mock Andor module or the real wrapper to the camera API.
 if IS_DEBUG:
+    from evora_server.mock import AndorWrapperMocker
+
     andor_wrapper = AndorWrapperMocker()
 else:
     if sys.platform == "linux":
@@ -42,6 +46,5 @@ else:
 
 logger = logging.getLogger("uvicorn.error")
 
-config = Config()
 
 __version__ = version("evora-server")

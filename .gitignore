@@ -144,3 +144,4 @@ andor/
 deprecated/
 
 .vscode/
+.envrc
