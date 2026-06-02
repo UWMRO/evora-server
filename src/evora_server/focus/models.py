@@ -68,18 +68,3 @@ class FocusSession(BaseModel):
             "for different methods",
         ),
     ] = None
-
-    def serialize(self):
-        return {
-            "id": self.id,
-            "focuser_positons": self.focuser_positons,
-            "fwhm_metrics": self.fwhm_metrics,
-            "hfd_metrics": self.hfd_metrics,
-            "files": self.files,
-            "fwhm_fit": list(self.fwhm_fit) if self.fwhm_fit is not None else None,
-            "hfd_fits": {method: list(fit) for method, fit in self.hfd_fits.items()}
-            if self.hfd_fits is not None
-            else None,
-            "predicted_min_fwhm": self.predicted_min_fwhm,
-            "predicted_min_hfd": self.predicted_min_hfd,
-        }
