@@ -136,3 +136,12 @@ node_modules
 # Ignore data folder if debugging
 data/
 evora/debug.py
+
+# Do not commit andor drivers
+andor/
+
+# Skip the deprecated code
+deprecated/
+
+.vscode/
+.envrc
