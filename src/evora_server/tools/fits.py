@@ -16,7 +16,7 @@ from astropy.time import Time
 
 from evora_server import IS_DEBUG, andor_wrapper, config, logger
 from evora_server.tools.filter_wheel import get_filter
-from evora_server.tools.focus import get_focus
+from evora_server.tools.focuser import get_focus
 from evora_server.tools.tcs import get_tcs_status
 
 
@@ -83,7 +83,7 @@ async def create_hdul(
 
     header["FILTER"] = (filter_, "Filter name")
     header["CCD-TEMP"] = (round(temperature, 2), "CCD Temperature [C]")
-    header["FOCUS"] = (focus, "Relative focus position [steps]")
+    header["FOCUS"] = (focus, "Relative focuser position [steps]")
 
     if tcs_status:
         ra = round(tcs_status.right_ascension, 6)

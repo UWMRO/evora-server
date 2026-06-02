@@ -20,6 +20,7 @@ from .routers import (
     expose,
     filter,
     focus,
+    focuser,
     framing,
     initialize,
     status,
@@ -54,7 +55,7 @@ app.include_router(initialize.router)
 app.include_router(expose.router)
 app.include_router(filter.router)
 app.include_router(weather.router)
-app.include_router(focus.router)
+app.include_router(focuser.router)
 app.include_router(telescope.router)
 app.include_router(framing.router)
 

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # @Date: 2026-05-09
-# @Filename: focus.py
+# @Filename: focuser.py
 # @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
 
 from __future__ import annotations
@@ -18,8 +18,8 @@ from evora_server import IS_DEBUG, AndorWrapperMocker, andor_wrapper, config
 __all__ = ["get_focus", "set_focus"]
 
 
-class FocusStatusModel(BaseModel):
-    """Model for the focus status."""
+class FocuserStatusModel(BaseModel):
+    """Model for the focuser status."""
 
     error: Annotated[
         bool,
@@ -27,20 +27,20 @@ class FocusStatusModel(BaseModel):
     ]
     moving: Annotated[
         bool,
-        Field(description="Whether the focus is currently moving."),
+        Field(description="Whether the focuser is currently moving."),
     ]
     step: Annotated[
         int,
-        Field(description="The current step position of the focus."),
+        Field(description="The current step position of the focuser."),
     ]
     limit: Annotated[
         bool,
-        Field(description="Whether the focus has reached a limit."),
+        Field(description="Whether the focuser has reached a limit."),
     ]
 
 
-class FocusMoveModel(BaseModel):
-    """Model for the focus move command."""
+class FocuserMoveModel(BaseModel):
+    """Model for the focuser move command."""
 
     error: Annotated[
         bool,
@@ -48,13 +48,13 @@ class FocusMoveModel(BaseModel):
     ]
 
 
-async def get_focus() -> FocusStatusModel:
-    """Returns the current focus position."""
+async def get_focus() -> FocuserStatusModel:
+    """Returns the current focuser position."""
 
     if IS_DEBUG:
         assert isinstance(andor_wrapper, AndorWrapperMocker)
         state = andor_wrapper.state
-        return FocusStatusModel(
+        return FocuserStatusModel(
             error=False,
             moving=False,
             step=int(state.focus_position),
@@ -65,14 +65,14 @@ async def get_focus() -> FocusStatusModel:
         response = await client.get("/status")
         response.raise_for_status()
         data = response.json()
-        model = FocusStatusModel(error=False, **data)
+        model = FocuserStatusModel(error=False, **data)
         if model.error:
-            raise RuntimeError("Error getting focus status.")
+            raise RuntimeError("Error getting focuser status.")
         return model
 
 
 async def set_focus(position: float, absolute: bool = False) -> None:
-    """Sets the focus position."""
+    """Sets the focuser position."""
 
     if IS_DEBUG:
         assert isinstance(andor_wrapper, AndorWrapperMocker)
@@ -90,8 +90,8 @@ async def set_focus(position: float, absolute: bool = False) -> None:
         response = await client.get(f"/move/{position}")
         response.raise_for_status()
         data = response.json()
-        model = FocusMoveModel(**data)
+        model = FocuserMoveModel(**data)
         if model.error:
-            raise RuntimeError("Error moving focus")
+            raise RuntimeError("Error moving focuser.")
 
     return
