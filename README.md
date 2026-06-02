@@ -41,3 +41,27 @@ Note that if you are running the server on a non-Linux machine, or if the `andor
    WARNING   Using the **mock** Andor wrapper.
       INFO   Application startup complete.
 ```
+
+### For production
+
+To run the server in production mode, run
+
+```bash
+bash standalone-start.sh
+```
+
+or just
+
+```bash
+fastapi run src/evora_server/app.py --port 3000 --workers 1
+```
+
+Note that this will run the server on port 3000 and with a single worker, which is necessary as only one connection to the camera is allowed.
+
+## Development
+
+To develop the server, make sure you have [uv](https://astral.sh/uv/) and the development dependencies installed in your virtual environment.
+
+We use [Ruff](https://github.com/astral-sh/ruff) for linting and formatting. A GitHub workflow checks that all code is properly formatted.
+
+The preferred development workflow is to fork the repository, make changes for a feature or bug fix in a separate branch, and then open a pull request to merge the changes back to the main branch.
