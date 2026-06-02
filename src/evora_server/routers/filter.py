@@ -15,7 +15,7 @@ from fastapi import APIRouter, HTTPException, Query
 router = APIRouter(prefix="/filter", tags=["filter"])
 
 
-@router.get("/", summary="Gets the current filter in the wheel.")
+@router.get("/status", summary="Gets the current filter in the wheel.")
 async def get_filter() -> str:
     """Gets the current filter in the wheel."""
 

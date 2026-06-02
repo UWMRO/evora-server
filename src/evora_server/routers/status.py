@@ -26,7 +26,7 @@ class StatusResponseModel(BaseModel):
 
 
 @router.get(
-    "/",
+    "",
     response_model=StatusResponseModel,
     summary="Returns the status of the Andor camera.",
 )

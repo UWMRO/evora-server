@@ -169,7 +169,7 @@ class WeatherDataResponseModel(BaseModel):
     ]
 
 
-@router.get("/", summary="Returns the current weather data.")
+@router.get("/status", summary="Returns the current weather data.")
 async def get_weather_data() -> WeatherDataResponseModel:
     """Returns the current weather data."""
 

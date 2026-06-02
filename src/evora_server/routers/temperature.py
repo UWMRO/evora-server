@@ -55,7 +55,7 @@ class SetTemperatureResponseModel(BaseModel):
     ]
 
 
-@router.get("/", summary="Returns the current temperature of the camera.")
+@router.get("/status", summary="Returns the current temperature of the camera.")
 async def get_temperature(andor_wrapper: AndorWrapper) -> TemperatureResponseModel:
     """Returns the current temperature of the camera."""
 
