@@ -12,6 +12,7 @@ import pathlib
 from types import SimpleNamespace
 
 from evora_server import IS_DEBUG
+from evora_server.focus.models import FocusSession
 
 
 class Config(SimpleNamespace):
@@ -32,6 +33,8 @@ class Config(SimpleNamespace):
 
         if IS_DEBUG:
             self.FRAMING_CACHE_DIR = "./" + self.FRAMING_CACHE_DIR
+
+        self.focus_session = None
 
     # Focus API URL.
     focus_api_url: str = os.environ.get("FOCUS_API_URL", "http://127.0.0.1/focus")
@@ -84,3 +87,9 @@ class Config(SimpleNamespace):
     # Framing options
     FRAMING_MAX_SOURCES = 50
     FRAMING_CACHE_DIR = "/data/astrometry-index"
+
+    # Focusing options
+    FOCUS_SEP_MIN_AREA = 40
+    FOCUS_APERTURE_R = 10
+
+    focus_session: FocusSession | None = None
