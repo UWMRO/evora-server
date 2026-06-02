@@ -20,6 +20,7 @@ from .routers import (
     expose,
     filter,
     focus,
+    framing,
     initialize,
     status,
     telescope,
@@ -55,6 +56,7 @@ app.include_router(filter.router)
 app.include_router(weather.router)
 app.include_router(focus.router)
 app.include_router(telescope.router)
+app.include_router(framing.router)
 
 app.add_middleware(
     CORSMiddleware,

@@ -14,6 +14,10 @@ dependencies = [
     "httpx>=0.27.2",
     "setuptools>=82.0.1",
     "ambient-api>=1.5.7",
+    "astrometry>=4.3.0",
+    "sep>=1.4.1",
+    "matplotlib>=3.10.9",
+    "photutils>=3.0.0",
 ]
 
 [project.urls]

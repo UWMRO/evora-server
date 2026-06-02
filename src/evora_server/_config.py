@@ -11,6 +11,8 @@ import os
 import pathlib
 from types import SimpleNamespace
 
+from evora_server import IS_DEBUG
+
 
 class Config(SimpleNamespace):
     """Configuration for the Evora server. A singleton class."""
@@ -27,6 +29,9 @@ class Config(SimpleNamespace):
             return
         super().__init__(*args, **kwargs)
         self._singleton_initialized = True
+
+        if IS_DEBUG:
+            self.FRAMING_CACHE_DIR = "./" + self.FRAMING_CACHE_DIR
 
     # Focus API URL.
     focus_api_url: str = os.environ.get("FOCUS_API_URL", "http://127.0.0.1/focus")
@@ -75,3 +80,7 @@ class Config(SimpleNamespace):
 
     # Path to the last exposure taken.
     last_exposure_path: pathlib.Path | None = None
+
+    # Framing options
+    FRAMING_MAX_SOURCES = 50
+    FRAMING_CACHE_DIR = "/data/astrometry-index"
