@@ -11,7 +11,7 @@ import asyncio
 
 from typing import Annotated
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 
@@ -178,6 +178,10 @@ async def get_weather_data() -> WeatherDataResponseModel:
     api = AmbientAPI()
 
     devices = api.get_devices()
+
+    if len(devices) == 0:
+        raise HTTPException(status_code=404, detail="No weather station devices found.")
+
     device = devices[0]
 
     await asyncio.sleep(1)
