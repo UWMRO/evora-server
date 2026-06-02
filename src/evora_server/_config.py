@@ -11,7 +11,6 @@ import os
 import pathlib
 from types import SimpleNamespace
 
-from evora_server import IS_DEBUG
 from evora_server.focus.models import FocusSession
 
 
@@ -26,6 +25,8 @@ class Config(SimpleNamespace):
         return cls._instance
 
     def __init__(self, *args, **kwargs):
+        from evora_server import IS_DEBUG
+
         if getattr(self, "_singleton_initialized", False):
             return
         super().__init__(*args, **kwargs)
