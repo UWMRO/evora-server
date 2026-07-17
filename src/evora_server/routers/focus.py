@@ -108,7 +108,7 @@ class FocusPointPostModel(BaseModel):
         str,
         "The filename of the image to analyze for the focus datapoint.",
     ]
-    focuser_position: Annotated[
+    focuserPosition: Annotated[
         int,
         "The focuser position at which the image was taken.",
     ]
@@ -124,7 +124,7 @@ def route_add_focus_datapoint(payload: FocusPointPostModel):
 
     sid = payload.sid
     filename: str = payload.filename
-    focuser_position = int(payload.focuser_position)
+    focuser_position = int(payload.focuserPosition)
 
     if config.focus_session is None:
         config.focus_session = FocusSession(
