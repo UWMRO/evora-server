@@ -38,7 +38,7 @@ class Config(SimpleNamespace):
         self.focus_session = None
 
     # Focus API URL.
-    focus_api_url: str = os.environ.get("FOCUS_API_URL", "http://127.0.0.1/focus")
+    focus_api_url: str = os.environ.get("FOCUS_API_URL", "http://127.0.0.1/focuser")
 
     # TCS API URL.
     tcs_api_url: str = os.environ.get("TCS_API_URL", "http://127.0.0.1/tcs")
