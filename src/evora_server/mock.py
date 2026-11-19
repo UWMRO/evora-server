@@ -2,13 +2,27 @@ import threading
 import time
 from dataclasses import dataclass
 
+import numpy as np
 from numpy import array
-from numpy.random import randint
 
 from evora_server._config import Config
 
 
 __all__ = ["AndorWrapperMocker"]
+
+# sigma = 1.8 + ((focus - 1500) / 800)^2. The mock sweep is sharpest at step 1500.
+_MOCK_BEST_FOCUS = 1500.0
+
+
+def _focus_frame(height: int, width: int, focus: float) -> np.ndarray:
+    yy, xx = np.mgrid[0:height, 0:width]
+    sigma = 1.8 + ((focus - _MOCK_BEST_FOCUS) / 800.0) ** 2
+    star = np.exp(
+        -0.5 * (((xx - width / 2.0) / sigma) ** 2 + ((yy - height / 2.0) / sigma) ** 2)
+    )
+    image = 100.0 + 8.0 * np.random.standard_normal((height, width))
+    image += 8000.0 * star
+    return np.clip(image, 0, 65535).astype(np.uint16)
 
 
 @dataclass
@@ -145,7 +159,11 @@ class AndorWrapperMocker:
     def getAcquiredData(self, dim: tuple[int, int]):
         if self.state.initialized:
             if not self.state.acquiring:
-                data = randint(65535, size=dim)
+                data = _focus_frame(
+                    int(dim[0]),
+                    int(dim[1]),
+                    float(self.state.focus_position),
+                )
                 return {"data": data, "status": self.config.DRV_SUCCESS}
             else:
                 return {

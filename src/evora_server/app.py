@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from evora_server import IS_DEBUG, __version__, logger
 
 from .routers import (
+    autofocus,
     expose,
     filter,
     focus,
@@ -55,6 +56,7 @@ app.include_router(initialize.router)
 app.include_router(expose.router)
 app.include_router(filter.router)
 app.include_router(focus.router)
+app.include_router(autofocus.router)
 app.include_router(weather.router)
 app.include_router(focuser.router)
 app.include_router(telescope.router)

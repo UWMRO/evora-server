@@ -48,7 +48,7 @@ class Config(SimpleNamespace):
     focus_wheel_port: int = int(os.environ.get("FOCUS_WHEEL_PORT", "9999"))
 
     # Data path
-    data_path: str = "/data/ecam"
+    data_path: str = os.environ.get("EVORA_DATA_PATH", "/data/ecam")
 
     # Status constants, taken from atmcdLXd.h
     DRV_SUCCESS: int = 20002
