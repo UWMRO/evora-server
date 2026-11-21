@@ -68,7 +68,10 @@ async def get_filter() -> str:
     if not status:
         raise RuntimeError(f"Failed to get filter wheel position. Error: {reply}")
 
-    fw_position = int(reply)
+    try:
+        fw_position = int(reply.strip())
+    except ValueError:
+        return "Unknown"
     return config.filter_dict_reverse.get(fw_position, "Unknown")
 
 

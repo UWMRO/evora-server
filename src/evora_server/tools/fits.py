@@ -42,8 +42,12 @@ async def create_hdul(
     # Get the camera temperature.
     temperature = andor_wrapper.getStatusTEC()["temperature"]
 
-    # Get filter wheel value.
-    filter_ = await get_filter()
+    # Get filter wheel value. A missing wheel must not throw away the exposure.
+    try:
+        filter_ = await get_filter()
+    except Exception as err:
+        logger.warning(f"Failed to get filter: {err}")
+        filter_ = "Unknown"
 
     # Get TCS status.
     try:
