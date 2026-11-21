@@ -66,8 +66,11 @@ class AutofocusConfirmModel(BaseModel):
 async def route_start(body: AutofocusStartModel) -> AutofocusStatusModel:
     """Moves through the requested steps, measures each frame, and stops to ask."""
 
-    if body.delta == 0:
-        raise HTTPException(status_code=400, detail="Delta must not be zero.")
+    if not 10 <= abs(body.delta) <= 10000:
+        raise HTTPException(
+            status_code=400,
+            detail="Delta must be from 10 to 10000 steps.",
+        )
     return await start_sweep(
         body.f0,
         body.delta,

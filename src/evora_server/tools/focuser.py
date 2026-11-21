@@ -39,15 +39,6 @@ class FocuserStatusModel(BaseModel):
     ]
 
 
-class FocuserMoveModel(BaseModel):
-    """Model for the focuser move command."""
-
-    error: Annotated[
-        bool,
-        Field(description="Whether the move command returned an error."),
-    ]
-
-
 async def get_focus() -> FocuserStatusModel:
     """Returns the current focuser position."""
 
@@ -85,13 +76,17 @@ async def set_focus(position: float, absolute: bool = False) -> None:
         position = position - current_position.step
 
     position = int(position)
+    if position == 0:
+        return
+    # The controller rejects a move smaller than 10 steps or larger than 10000.
+    if not 10 <= abs(position) <= 10000:
+        raise RuntimeError("The focuser only accepts a move of 10 to 10000 steps.")
 
     async with httpx.AsyncClient(base_url=config.focus_api_url, timeout=60) as client:
-        response = await client.get(f"/move/{position}")
+        response = await client.post("/move", params={"steps": position})
         response.raise_for_status()
         data = response.json()
-        model = FocuserMoveModel(**data)
-        if model.error:
+        if data.get("error") or ("code" in data and data["code"] != 200):
             raise RuntimeError("Error moving focuser.")
 
     return
