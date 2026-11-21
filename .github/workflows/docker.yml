@@ -22,7 +22,6 @@ jobs:
       packages: write
 
     env:
-      USER: mro
       APP: evora-server
 
     steps:
@@ -50,6 +49,7 @@ jobs:
       - name: Set docker tags
         id: set-tags
         run: |
+          USER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           if [[ $GITHUB_REF == refs/heads/main ]]
           then
             echo TAGS=$USER/$APP:latest >> $GITHUB_OUTPUT
@@ -75,7 +75,11 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
         id: docker_build
