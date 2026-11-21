@@ -17,6 +17,7 @@ from astropy.modeling import fitting, models
 
 
 MAX_STAR_SHIFT_PX = 32
+NO_STAR_IN_IMAGE = "No star in the image."
 
 _SEP_THRESHOLD = 3.0
 _SEP_MIN_AREA = 9
@@ -119,7 +120,7 @@ def measure_star(
     side = None if box_size is None else _square_side(box_size)
     signal, sources, segmap = _extract(image)
     if len(sources) == 0:
-        raise MeasureError("No star in the image.")
+        raise MeasureError(NO_STAR_IN_IMAGE)
 
     index = int(np.argmax(sources["flux"]))
     star = sources[index]
@@ -340,7 +341,7 @@ def _extract(
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     data = np.ascontiguousarray(image, dtype=np.float32)
     if data.ndim != 2:
-        raise MeasureError("No star in the image.")
+        raise MeasureError(NO_STAR_IN_IMAGE)
     data = np.nan_to_num(data, nan=0.0, posinf=0.0, neginf=0.0)
     try:
         background = sep.Background(data)
@@ -353,7 +354,7 @@ def _extract(
             segmentation_map=True,
         )
     except Exception as err:
-        raise MeasureError("No star in the image.") from err
+        raise MeasureError(NO_STAR_IN_IMAGE) from err
     return signal, sources, segmap
 
 
@@ -366,7 +367,7 @@ def _dynamic_box_side(
     b = float(star["b"])
     theta = float(star["theta"])
     if min(a, b) <= 0 or not np.isfinite(a + b + theta):
-        raise MeasureError("No star in the image.")
+        raise MeasureError(NO_STAR_IN_IMAGE)
 
     scale = _light_scale(signal, star, segmap, a, b, theta)
     cos_t = float(np.cos(theta))
@@ -405,7 +406,7 @@ def _light_scale(
             **mask_args,
         )
     except Exception as err:
-        raise MeasureError("No star in the image.") from err
+        raise MeasureError(NO_STAR_IN_IMAGE) from err
 
     kron = float(np.asarray(kronrad).reshape(-1)[0])
     if not np.isfinite(kron) or kron <= 0:

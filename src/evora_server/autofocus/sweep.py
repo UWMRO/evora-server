@@ -16,7 +16,12 @@ from astropy.io import fits
 from fastapi import HTTPException
 
 from evora_server import andor_wrapper, logger
-from evora_server.autofocus.measure import MeasureError, measure_star, recommend_focus
+from evora_server.autofocus.measure import (
+    NO_STAR_IN_IMAGE,
+    MeasureError,
+    measure_star,
+    recommend_focus,
+)
 from evora_server.autofocus.models import AutofocusStatusModel
 from evora_server.routers.expose import (
     ExposurePostParams,
@@ -152,6 +157,7 @@ class Sweep:
 
     async def _sweep(self) -> None:
         previous: tuple[float, float] | None = None
+        found_star = False
         for index, position in enumerate(self.positions):
             if self.abort_requested:
                 self.mark_aborted()
@@ -188,10 +194,18 @@ class Sweep:
                     previous,
                 )
             except MeasureError as err:
+                if str(err) == NO_STAR_IN_IMAGE:
+                    logger.info(
+                        "Autofocus step %s has no star and was left out.",
+                        position,
+                    )
+                    self.completed = index + 1
+                    continue
                 self.state = "error"
                 self.message = str(err)
                 return
 
+            found_star = True
             previous = (measurement.x, measurement.y)
             self.completed = index + 1
             if measurement.donut:
@@ -214,7 +228,12 @@ class Sweep:
             return
         if not self.kept_positions:
             self.state = "error"
-            self.message = "Every measured star is a donut. No focus recommendation."
+            if found_star:
+                self.message = (
+                    "Every measured star is a donut. No focus recommendation."
+                )
+            else:
+                self.message = "No star in the images."
             return
 
         recommendation = recommend_focus(self.kept_positions, self.kept_sigmas)
